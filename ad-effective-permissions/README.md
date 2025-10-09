@@ -130,11 +130,13 @@ Get-EffectiveAccess -ADObject "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -
 
 ### Validate Azure Local permissions for OU
 
-$results = Get-EffectiveAccess -ADObject "CN=AzureLocalOU,DC=contoso,DC=com" -UserName "LCM-User"
-Test-RequiredPermissions $result
+Example to test Azure Local OU has required permissions delagated for the LifeCycle Manager (LCM) user (deployment user) account:
 
 ```PowerShell
-PS C:\Users\Administrator> Test-RequiredPermissions $results
+$results = Get-EffectiveAccess -ADObject "CN=AzureLocalOU,DC=contoso,DC=com" -UserName "LCM-User"
+
+Test-RequiredPermissions $result
+
 
 CreateDeleteComputerObjects ReadPropertyAllObjects ms-FVE-RecoveryInformation AllRequiredPermissionsPresent
 --------------------------- ---------------------- -------------------------- -----------------------------
