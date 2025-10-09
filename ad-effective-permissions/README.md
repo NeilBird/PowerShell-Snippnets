@@ -130,12 +130,19 @@ Get-EffectiveAccess -ADObject "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -
 
 ### Validate Azure Local permissions for OU
 
-Example to test Azure Local OU has required permissions delagated for the LifeCycle Manager (LCM) user (deployment user) account:
+Example commands to download the script, import it and confirm that an Azure Local OU has required permissions delegated for the LifeCycle Manager (LCM) user (deployment user) account:
 
 ```PowerShell
-$results = Get-EffectiveAccess -ADObject "CN=AzureLocalOU,DC=contoso,DC=com" -UserName "LCM-User"
+Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/ad-effective-permissions/Get-EffectiveAccess.ps1 -OutFile .\Get-EffectiveAccess.ps1
 
-Test-RequiredPermissions $result
+Import-Module .\Get-EffectiveAccess.ps1
+
+$OU = "CN=AzureLocalOU,DC=contoso,DC=com"
+$LCMUser = "LCM-UserName"
+
+$results = Get-EffectiveAccess -ADObject $OU -UserName $LCMUser -Verbose
+
+Test-RequiredPermissions $results
 
 
 CreateDeleteComputerObjects ReadPropertyAllObjects ms-FVE-RecoveryInformation AllRequiredPermissionsPresent
