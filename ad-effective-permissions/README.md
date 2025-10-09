@@ -133,7 +133,7 @@ Get-EffectiveAccess -ADObject "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -
 Example commands to download the script, import it and confirm that an Azure Local OU has required permissions delegated for the LifeCycle Manager (LCM) user (deployment user) account:
 
 ```PowerShell
-Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/ad-effective-permissions/Get-EffectiveAccess.ps1 -OutFile .\Get-EffectiveAccess.ps1
+Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/ad-effective-permissions/Get-EffectiveAccess.ps1' -OutFile .\Get-EffectiveAccess.ps1
 
 Import-Module .\Get-EffectiveAccess.ps1
 
