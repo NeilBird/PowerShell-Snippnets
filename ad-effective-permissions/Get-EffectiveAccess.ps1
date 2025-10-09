@@ -100,6 +100,9 @@
     - Uses tokenGroups for comprehensive group membership resolution including domain local groups from trusted domains
     - UserName parameter is resolved to SID using the samAccountName attribute
 #>
+ 
+#requires -modules ActiveDirectory
+Import-Module ActiveDirectory -ErrorAction Stop
 
 # Helper function to resolve username to SID
 function Resolve-UserNameToSID {
