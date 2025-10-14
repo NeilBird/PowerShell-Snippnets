@@ -210,7 +210,7 @@ Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilB
 Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/ad-effective-permissions/Get-ADEffectiveAccess.psd1' -OutFile .\Get-ADEffectiveAccess.psd1
 
 # Import the module
-Import-Module .\Get-ADEffectiveAccess.psd1
+Import-Module .\Get-ADEffectiveAccess.psd1 -Force
 
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $LCMUser = "LCM-UserName"
