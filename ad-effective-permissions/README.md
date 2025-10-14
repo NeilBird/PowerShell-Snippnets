@@ -102,7 +102,7 @@ Primary function that operates in four modes:
 - `Object` (Mandatory): Distinguished Name of the AD object to analyze (alias: ADObject, DistinguishedName)
 - `UserSID` (Optional): Security Identifier of user for effective permissions calculation
 - `ComputerSID` (Optional): Security Identifier of computer for effective permissions calculation
-- `ObjectName` (Optional): SAMAccountName or DN of any AD object (aliases: UserName, ComputerName, GroupName)
+- `ObjectName` (Optional): SAMAccountName or DN of any AD object (user, computer, or group)
 - `Server` (Optional): Specific domain controller to query
 
 ##### Performance Optimization Parameters
@@ -215,7 +215,7 @@ Import-Module .\Get-ADEffectiveAccess.psd1
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $LCMUser = "LCM-UserName"
 
-$LCMUserPermissions = Get-ADEffectiveAccess -Object $OU -UserName $LCMUser -Verbose
+$LCMUserPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $LCMUser -Verbose
 
 Test-LCMUserRequiredPermissions $LCMUserPermissions
 
@@ -228,7 +228,7 @@ CreateDeleteComputerObjects ReadPropertyAllObjects ms-FVE-RecoveryInformation Al
 # Post-cluster deployment only, such as for troubleshooting cluster validation report failures for AD Organizational Unit permissions.
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $ClusterCNO = "cluster01-cl"
-$ClusterPermissions = Get-ADEffectiveAccess -Object $OU -ComputerName $ClusterCNO -Verbose
+$ClusterPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $ClusterCNO -Verbose
 
 Test-ClusterCNORequiredPermissions $ClusterPermissions
 

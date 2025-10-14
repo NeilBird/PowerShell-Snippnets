@@ -41,7 +41,7 @@
 .PARAMETER ObjectName
     The SAMAccountName or Distinguished Name of an AD object (user, computer, or group) for whom to calculate effective permissions. 
     The function will automatically detect the object type and resolve it to a SID, then analyze both direct permissions and 
-    permissions inherited through all group memberships. Can also be used with aliases: UserName, ComputerName, GroupName.
+    permissions inherited through all group memberships. For computer objects, you can specify the name with or without the trailing $ character.
 
 .PARAMETER Server
     The Active Directory server to query. If not specified, uses the current domain.
@@ -900,7 +900,6 @@ function Get-ADEffectiveAccess {
 
         [Parameter(ParameterSetName = 'ObjectNameEffectivePermissions', Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [alias('UserName', 'ComputerName', 'GroupName')]
         [string] $ObjectName,
 
         [parameter()]
