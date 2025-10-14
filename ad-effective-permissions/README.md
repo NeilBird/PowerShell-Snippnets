@@ -99,7 +99,7 @@ Primary function that operates in four modes:
 
 #### Parameters
 
-- `Object` (Mandatory): Distinguished Name of the AD object to analyze (alias: ADObject, DistinguishedName)
+- `ADObject` (Mandatory): Distinguished Name of the AD object to analyze (alias: DistinguishedName)
 - `UserSID` (Optional): Security Identifier of user for effective permissions calculation
 - `ComputerSID` (Optional): Security Identifier of computer for effective permissions calculation
 - `ObjectName` (Optional): SAMAccountName or DN of any AD object (user, computer, or group)
@@ -175,29 +175,29 @@ Checks for specific required permissions for Cluster Computer Name Object (CNO) 
 Import-Module .\Get-ADEffectiveAccess.psd1
 
 # Get all permissions for a user object
-Get-ADEffectiveAccess -Object "CN=TestUser,CN=Users,DC=contoso,DC=com"
+Get-ADEffectiveAccess -ADObject "CN=TestUser,CN=Users,DC=contoso,DC=com"
 
 # Get all permissions for an OU
-Get-ADEffectiveAccess -Object "OU=TestOU,DC=contoso,DC=com"
+Get-ADEffectiveAccess -ADObject "OU=TestOU,DC=contoso,DC=com"
 ```
 
 ### Object-Specific Effective Permissions
 
 ```powershell
 # Calculate effective permissions by user SID
-Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001"
+Get-ADEffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001"
 
 # Calculate effective permissions by computer SID
-Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ComputerSID "S-1-5-21-1234567890-1234567890-1234567890-1002"
+Get-ADEffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ComputerSID "S-1-5-21-1234567890-1234567890-1234567890-1002"
 
 # Calculate effective permissions by object name (auto-detects type)
-Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "jdoe"          # User
-Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "SERVER01"      # Computer (with or without $)
-Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "SERVER01$"     # Computer
-Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "Domain Admins" # Group
+Get-ADEffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "jdoe"          # User
+Get-ADEffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "SERVER01"      # Computer (with or without $)
+Get-ADEffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "SERVER01$"     # Computer
+Get-ADEffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "Domain Admins" # Group
 
 # Use specific domain controller
-Get-ADEffectiveAccess -Object "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -ObjectName "jsmith" -Server "dc01.contoso.com"
+Get-ADEffectiveAccess -ADObject "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -ObjectName "jsmith" -Server "dc01.contoso.com"
 ```
 
 ### Validate Azure Local permissions for OU
@@ -215,7 +215,7 @@ Import-Module .\Get-ADEffectiveAccess.psd1
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $LCMUser = "LCM-UserName"
 
-$LCMUserPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $LCMUser -Verbose
+$LCMUserPermissions = Get-ADEffectiveAccess -ADObject $OU -ObjectName $LCMUser -Verbose
 
 Test-LCMUserRequiredPermissions $LCMUserPermissions
 
@@ -228,7 +228,7 @@ CreateDeleteComputerObjects ReadPropertyAllObjects ms-FVE-RecoveryInformation Al
 # Post-cluster deployment only, such as for troubleshooting cluster validation report failures for AD Organizational Unit permissions.
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $ClusterCNO = "cluster01-cl"
-$ClusterPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $ClusterCNO -Verbose
+$ClusterPermissions = Get-ADEffectiveAccess -ADObject $OU -ObjectName $ClusterCNO -Verbose
 
 Test-ClusterCNORequiredPermissions $ClusterPermissions
 
@@ -242,32 +242,32 @@ CreateComputerObjects ReadAllProperties AllRequiredPermissionsPresent
 
 ```powershell
 # For very large AD environments with deep group nesting
-Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "serviceaccount" -MaxGroupDepth 25 -GroupBatchSize 200 -TimeoutSeconds 600 -Verbose
+Get-ADEffectiveAccess -ADObject "CN=TestOU,DC=contoso,DC=com" -ObjectName "serviceaccount" -MaxGroupDepth 25 -GroupBatchSize 200 -TimeoutSeconds 600 -Verbose
 
 # For environments with known shallow group structures (faster processing)
-Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "user123" -MaxGroupDepth 10 -GroupBatchSize 50 -TimeoutSeconds 120
+Get-ADEffectiveAccess -ADObject "CN=TestOU,DC=contoso,DC=com" -ObjectName "user123" -MaxGroupDepth 10 -GroupBatchSize 50 -TimeoutSeconds 120
 
 # Conservative settings for very complex environments to prevent timeouts
-Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "admin" -MaxGroupDepth 15 -GroupBatchSize 25 -TimeoutSeconds 900
+Get-ADEffectiveAccess -ADObject "CN=TestOU,DC=contoso,DC=com" -ObjectName "admin" -MaxGroupDepth 15 -GroupBatchSize 25 -TimeoutSeconds 900
 ```
 
 ### Advanced Analysis
 
 ```powershell
 # Get effective permissions with verbose output for troubleshooting
-Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "serviceaccount" -Verbose
+Get-ADEffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "serviceaccount" -Verbose
 
 # Check permissions for multiple objects
 $objects = @(
     "CN=Computer1,CN=Computers,DC=contoso,DC=com",
     "CN=Computer2,CN=Computers,DC=contoso,DC=com"
 )
-$objects | ForEach-Object { Get-ADEffectiveAccess -Object $_ -ObjectName "admin" }
+$objects | ForEach-Object { Get-ADEffectiveAccess -ADObject $_ -ObjectName "admin" }
 
 # Compare different ways to specify the same computer
-Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "SERVER01"      # Auto-detects computer
-Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "SERVER01$"     # Explicit computer name
-Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ComputerSID "S-1-5-21-..." # Direct SID
+Get-ADEffectiveAccess -ADObject "CN=TestOU,DC=contoso,DC=com" -ObjectName "SERVER01"      # Auto-detects computer
+Get-ADEffectiveAccess -ADObject "CN=TestOU,DC=contoso,DC=com" -ObjectName "SERVER01$"     # Explicit computer name
+Get-ADEffectiveAccess -ADObject "CN=TestOU,DC=contoso,DC=com" -ComputerSID "S-1-5-21-..." # Direct SID
 ```
 
 ## Output Properties
