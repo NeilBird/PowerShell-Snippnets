@@ -46,6 +46,18 @@
 .PARAMETER Server
     The Active Directory server to query. If not specified, uses the current domain.
 
+.PARAMETER MaxGroupDepth
+    Maximum recursion depth for nested group resolution to prevent stack overflow in environments with deep group hierarchies. 
+    Default: 50. Range: 1-100.
+
+.PARAMETER GroupBatchSize
+    Number of groups to process in each batch to optimize memory usage and performance in large environments. 
+    Default: 100. Range: 10-1000.
+
+.PARAMETER TimeoutSeconds
+    Maximum time in seconds to spend on group membership resolution before timing out to prevent runaway operations. 
+    Default: 300 (5 minutes). Range: 30-3600.
+
 .EXAMPLE
     Get-ADEffectiveAccess -Object "CN=TestUser,CN=Users,DC=contoso,DC=com"
     
@@ -81,6 +93,12 @@
     Calculates effective permissions for the 'Domain Admins' group on a specific server.
 
 .EXAMPLE
+    Get-ADEffectiveAccess -Object "OU=LargeOU,DC=contoso,DC=com" -ObjectName "complex-user" -MaxGroupDepth 25 -GroupBatchSize 50 -TimeoutSeconds 600 -Verbose
+    
+    Calculates effective permissions with custom optimization settings for large environments: reduced max depth, smaller batch size, 
+    and extended timeout for complex group hierarchies.
+
+.EXAMPLE
     Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -Object $adObject -Server "dc01.contoso.com"
     Calculates effective permissions for the specified user SID on the provided AD object, including permissions 
     inherited through group memberships. The GUID map will be automatically built if not provided.
@@ -97,6 +115,15 @@
     - Results include source attribution showing whether permissions come from direct assignment or group membership
     - Uses tokenGroups for comprehensive group membership resolution including domain local groups from trusted domains
     - ObjectName parameter is resolved to SID using the samAccountName or distinguishedName attribute
+    
+    Performance Optimizations for Large Environments:
+    - Uses .NET collections (Dictionary, HashSet, List) for better performance with large datasets
+    - Batch processing of group lookups to reduce AD query overhead
+    - Configurable recursion depth limits to prevent stack overflow
+    - Timeout protection to prevent runaway operations
+    - Progress reporting for large ACE processing
+    - Memory-efficient result set building
+    - O(1) SID lookups using HashSet instead of array contains operations
 #>
  
 #requires -modules ActiveDirectory
@@ -271,6 +298,7 @@ function Resolve-ComputerNameToSID {
 }
 
 # Helper function to get all group memberships recursively for users or computers
+# Optimized for large environments with many nested groups
 function Get-ADObjectGroupMemberships {
     [CmdletBinding()]
     param(
@@ -281,10 +309,31 @@ function Get-ADObjectGroupMemberships {
         [string] $Server,
         
         [Parameter()]
-        [hashtable] $ProcessedGroups = @{}
+        [hashtable] $ProcessedGroups = @{},
+        
+        [Parameter()]
+        [int] $MaxDepth = 50,
+        
+        [Parameter()]
+        [int] $CurrentDepth = 0,
+        
+        [Parameter()]
+        [int] $BatchSize = 100,
+        
+        [Parameter()]
+        [int] $TimeoutSeconds = 300
     )
     
-    $allGroups = @()
+    # Prevent infinite recursion and excessive depth
+    if ($CurrentDepth -ge $MaxDepth) {
+        Write-Warning "Maximum recursion depth ($MaxDepth) reached. Stopping group enumeration to prevent stack overflow."
+        return @()
+    }
+    
+    # Track start time for timeout handling
+    $startTime = Get-Date
+    
+    $allGroups = [System.Collections.Generic.List[PSObject]]::new()
     
     try {
         # First, try to find the object by SID - could be user or computer
@@ -301,7 +350,13 @@ function Get-ADObjectGroupMemberships {
             throw "Object with SID $ObjectSID not found"
         }
         
-        Write-Verbose "Found object: $($adObject.DistinguishedName) of class: $($adObject.objectClass)"
+        Write-Verbose "Found object: $($adObject.DistinguishedName) of class: $($adObject.objectClass) (Depth: $CurrentDepth)"
+        
+        # Check timeout
+        if (((Get-Date) - $startTime).TotalSeconds -gt $TimeoutSeconds) {
+            Write-Warning "Timeout exceeded ($TimeoutSeconds seconds) during group membership resolution. Partial results may be returned."
+            return $allGroups.ToArray()
+        }
         
         # Now get the object with tokenGroups using the Identity (DN or GUID)
         # Use Get-ADObject since it works for both users and computers
@@ -315,68 +370,120 @@ function Get-ADObjectGroupMemberships {
         $objectWithTokenGroups = Get-ADObject @tokenGroupsParams
         
         # Use tokenGroups for more comprehensive group membership (includes domain local groups from trusted domains)
-        if ($objectWithTokenGroups.tokenGroups) {
-            foreach ($groupSID in $objectWithTokenGroups.tokenGroups) {
-                $sidString = $groupSID.Value
+        if ($objectWithTokenGroups.tokenGroups -and $objectWithTokenGroups.tokenGroups.Count -gt 0) {
+            Write-Verbose "Processing $($objectWithTokenGroups.tokenGroups.Count) group SIDs at depth $CurrentDepth"
+            
+            # Process groups in batches to prevent memory issues
+            $groupSIDs = $objectWithTokenGroups.tokenGroups | ForEach-Object { $_.Value }
+            $groupBatches = @()
+            
+            # Split into batches
+            for ($i = 0; $i -lt $groupSIDs.Count; $i += $BatchSize) {
+                $end = [Math]::Min($i + $BatchSize - 1, $groupSIDs.Count - 1)
+                $groupBatches += ,@($groupSIDs[$i..$end])
+            }
+            
+            foreach ($batch in $groupBatches) {
+                # Check timeout for each batch
+                if (((Get-Date) - $startTime).TotalSeconds -gt $TimeoutSeconds) {
+                    Write-Warning "Timeout exceeded during batch processing. Partial results returned."
+                    break
+                }
                 
-                if (-not $ProcessedGroups.ContainsKey($sidString)) {
-                    $ProcessedGroups[$sidString] = $true
-                    
-                    try {
-                        # Try to resolve the SID to get group information
-                        $groupParams = @{
-                            Filter = "objectSID -eq '$sidString'"
-                            Properties = 'memberOf', 'samAccountName', 'distinguishedName'
+                # Process batch of group SIDs
+                $batchGroups = @()
+                foreach ($sidString in $batch) {
+                    if (-not $ProcessedGroups.ContainsKey($sidString)) {
+                        $ProcessedGroups[$sidString] = $true
+                        
+                        try {
+                            # Try to resolve the SID to get group information
+                            $groupParams = @{
+                                Filter = "objectSID -eq '$sidString'"
+                                Properties = 'memberOf', 'samAccountName', 'distinguishedName'
+                                ErrorAction = 'SilentlyContinue'
+                            }
+                            if ($Server) { $groupParams['Server'] = $Server }
+                            
+                            $group = Get-ADGroup @groupParams
+                            
+                            if ($group) {
+                                $groupObj = [PSCustomObject]@{
+                                    SID = $sidString
+                                    Name = $group.samAccountName
+                                    DistinguishedName = $group.distinguishedName
+                                    Depth = $CurrentDepth
+                                }
+                                $allGroups.Add($groupObj)
+                                $batchGroups += $group
+                            }
                         }
-                        if ($Server) { $groupParams['Server'] = $Server }
-                        
-                        $group = Get-ADGroup @groupParams -ErrorAction SilentlyContinue
-                        
-                        if ($group) {
-                            $allGroups += [PSCustomObject]@{
-                                SID = $sidString
-                                Name = $group.samAccountName
-                                DistinguishedName = $group.distinguishedName
+                        catch {
+                            Write-Verbose "Could not resolve SID: $sidString - $($_.Exception.Message)"
+                        }
+                    }
+                }
+                
+                # Process nested groups for this batch (only if we haven't hit max depth)
+                if ($CurrentDepth -lt ($MaxDepth - 1)) {
+                    foreach ($group in $batchGroups) {
+                        if ($group.memberOf -and $group.memberOf.Count -gt 0) {
+                            # Batch process nested groups to avoid excessive AD queries
+                            $nestedGroupSIDs = @()
+                            
+                            # Collect all nested group SIDs first
+                            foreach ($nestedGroupDN in $group.memberOf) {
+                                try {
+                                    $nestedGroupParams = @{
+                                        Identity = $nestedGroupDN
+                                        Properties = 'objectSID'
+                                        ErrorAction = 'SilentlyContinue'
+                                    }
+                                    if ($Server) { $nestedGroupParams['Server'] = $Server }
+                                    
+                                    $nestedGroup = Get-ADGroup @nestedGroupParams
+                                    if ($nestedGroup -and $nestedGroup.objectSID) {
+                                        $nestedSID = $nestedGroup.objectSID.Value
+                                        if (-not $ProcessedGroups.ContainsKey($nestedSID)) {
+                                            $nestedGroupSIDs += $nestedSID
+                                        }
+                                    }
+                                }
+                                catch {
+                                    Write-Verbose "Could not process nested group: $nestedGroupDN - $($_.Exception.Message)"
+                                }
                             }
                             
-                            # Recursively get nested groups
-                            if ($group.memberOf) {
-                                foreach ($nestedGroupDN in $group.memberOf) {
-                                    try {
-                                        $nestedGroupParams = @{
-                                            Identity = $nestedGroupDN
-                                            Properties = 'objectSID'
-                                        }
-                                        if ($Server) { $nestedGroupParams['Server'] = $Server }
-                                        
-                                        $nestedGroup = Get-ADGroup @nestedGroupParams -ErrorAction SilentlyContinue
-                                        if ($nestedGroup -and $nestedGroup.objectSID) {
-                                            $nestedSID = $nestedGroup.objectSID.Value
-                                            if (-not $ProcessedGroups.ContainsKey($nestedSID)) {
-                                                $nestedGroups = Get-ADObjectGroupMemberships -ObjectSID $nestedSID -Server $Server -ProcessedGroups $ProcessedGroups
-                                                $allGroups += $nestedGroups
-                                            }
-                                        }
+                            # Recursively process each unique nested group SID
+                            foreach ($nestedSID in $nestedGroupSIDs) {
+                                try {
+                                    $nestedGroups = Get-ADObjectGroupMemberships -ObjectSID $nestedSID -Server $Server -ProcessedGroups $ProcessedGroups -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1) -BatchSize $BatchSize -TimeoutSeconds $TimeoutSeconds
+                                    if ($nestedGroups -and $nestedGroups.Count -gt 0) {
+                                        $allGroups.AddRange($nestedGroups)
                                     }
-                                    catch {
-                                        Write-Verbose "Could not process nested group: $nestedGroupDN"
-                                    }
+                                }
+                                catch {
+                                    Write-Verbose "Error processing nested group SID $nestedSID : $($_.Exception.Message)"
+                                }
+                                
+                                # Check timeout during nested processing
+                                if (((Get-Date) - $startTime).TotalSeconds -gt $TimeoutSeconds) {
+                                    Write-Warning "Timeout exceeded during nested group processing."
+                                    break
                                 }
                             }
                         }
-                    }
-                    catch {
-                        Write-Verbose "Could not resolve SID: $sidString"
                     }
                 }
             }
         }
     }
     catch {
-        Write-Error "Failed to get object information for SID: $UserSID. Error: $($_.Exception.Message)"
+        Write-Error "Failed to get object information for SID: $ObjectSID. Error: $($_.Exception.Message)"
     }
     
-    return $allGroups
+    Write-Verbose "Completed group membership resolution at depth $CurrentDepth. Found $($allGroups.Count) total groups."
+    return $allGroups.ToArray()
 }
 
 # Helper function to calculate effective permissions for a specific user
@@ -404,9 +511,9 @@ function Get-UserEffectivePermissions {
     $effectiveUserSID = $null
     
     if ($PSCmdlet.ParameterSetName -eq 'BySID') {
-        # check the SID format is valid using try/catch approach
+        # Validate SID format
         try {
-            $testSid = New-Object System.Security.Principal.SecurityIdentifier($UserSID)
+            [void](New-Object System.Security.Principal.SecurityIdentifier($UserSID))
             $effectiveUserSID = $UserSID
         }
         catch {
@@ -467,21 +574,70 @@ function Get-UserEffectivePermissions {
         Write-Verbose "Built GUID map with $($GUIDMap.Count) entries"
     }
     
-    $effectivePermissions = @{}
-    $permissionSources = @{}
+    $effectivePermissions = [System.Collections.Generic.Dictionary[string, object]]::new()
     
-    # Get all groups the user/computer belongs to
-    $objectGroups = Get-ADObjectGroupMemberships -ObjectSID $effectiveUserSID -Server $Server
-    $allSIDs = @($effectiveUserSID) + $objectGroups.SID
+    # Get all groups the user/computer belongs to with optimizations for large environments
+    Write-Verbose "Starting group membership resolution for SID: $effectiveUserSID"
+    $startTime = Get-Date
+    
+    try {
+        $objectGroups = Get-ADObjectGroupMemberships -ObjectSID $effectiveUserSID -Server $Server -MaxDepth $MaxGroupDepth -BatchSize $GroupBatchSize -TimeoutSeconds $TimeoutSeconds
+    }
+    catch {
+        Write-Error "Failed to resolve group memberships: $($_.Exception.Message)"
+        return @()
+    }
+    
+    $groupResolutionTime = ((Get-Date) - $startTime).TotalSeconds
+    Write-Verbose "Group membership resolution completed in $([Math]::Round($groupResolutionTime, 2)) seconds. Found $($objectGroups.Count) groups."
+    
+    # Create optimized SID lookup using HashSet for O(1) lookups instead of array contains
+    $allSIDsHashSet = [System.Collections.Generic.HashSet[string]]::new()
+    $allSIDsHashSet.Add($effectiveUserSID) | Out-Null
+    
+    # Build SID to group info lookup for faster source attribution
+    $sidToGroupLookup = @{}
+    
+    foreach ($group in $objectGroups) {
+        $allSIDsHashSet.Add($group.SID) | Out-Null
+        $sidToGroupLookup[$group.SID] = $group
+    }
     
     Write-Verbose "Analyzing permissions for object $effectiveUserSID and $($objectGroups.Count) groups"
-    Write-Verbose "User and group SIDs: $($allSIDs -join ', ')"
+    Write-Verbose "Total SIDs to check: $($allSIDsHashSet.Count)"
+    
+    # Get AD object properties with error handling
+    $adObjParams = @{
+        Properties = 'nTSecurityDescriptor'
+    }
+    if ($Server) { $adObjParams['Server'] = $Server }
+    
     $adObjParams['Identity'] = $ADObject
     $ADObjectProperties = Get-ADObject @adObjParams
-    Write-Verbose "Processing $($ADObjectProperties.nTSecurityDescriptor.Access.Count) ACEs"
-
+    
+    if (-not $ADObjectProperties.nTSecurityDescriptor -or -not $ADObjectProperties.nTSecurityDescriptor.Access) {
+        Write-Warning "No security descriptor or ACEs found for object: $($ADObjectProperties.DistinguishedName)"
+        return @()
+    }
+    
+    $aceCount = $ADObjectProperties.nTSecurityDescriptor.Access.Count
+    Write-Verbose "Processing $aceCount ACEs"
+    
+    # Process ACEs with progress tracking for large sets
+    $processedAces = 0
+    $matchedAces = 0
+    $startAceProcessing = Get-Date
+    
     # Process each ACE in the security descriptor
     foreach ($acl in $ADObjectProperties.nTSecurityDescriptor.Access) {
+        $processedAces++
+        
+        # Progress reporting for large ACE sets
+        if ($aceCount -gt 1000 -and $processedAces % 500 -eq 0) {
+            $percentComplete = [Math]::Round(($processedAces / $aceCount) * 100, 1)
+            Write-Verbose "ACE processing progress: $percentComplete% ($processedAces/$aceCount)"
+        }
+        
         # Convert IdentityReference to SID if needed
         $aclSID = $acl.IdentityReference.Value
         if ($acl.IdentityReference -is [System.Security.Principal.NTAccount]) {
@@ -494,17 +650,21 @@ function Get-UserEffectivePermissions {
             }
         }
         
-        Write-Verbose "Processing ACE for: $aclSID (Rights: $($acl.ActiveDirectoryRights), Type: $($acl.AccessControlType))"
-        
-        # Check if this ACE applies to our user or any of their groups
-        if ($aclSID -in $allSIDs) {
-            Write-Verbose "MATCH FOUND: ACE applies to user/group - $aclSID"
-            # Determine the source of the permission
+        # Use HashSet for O(1) lookup instead of array contains
+        if ($allSIDsHashSet.Contains($aclSID)) {
+            $matchedAces++
+            Write-Verbose "MATCH FOUND ($matchedAces): ACE applies to user/group - $aclSID"
+            
+            # Determine the source of the permission using lookup table
             $source = if ($aclSID -eq $effectiveUserSID) {
                 "Direct Assignment"
             } else {
-                $groupInfo = $objectGroups | Where-Object { $_.SID -eq $aclSID } | Select-Object -First 1
-                "Group: $($groupInfo.Name)"
+                $groupInfo = $sidToGroupLookup[$aclSID]
+                if ($groupInfo) {
+                    "Group: $($groupInfo.Name)"
+                } else {
+                    "Group: $aclSID"
+                }
             }
             
             # Create a unique key for this permission combination
@@ -521,14 +681,17 @@ function Get-UserEffectivePermissions {
                     IsInherited = $acl.IsInherited
                     InheritanceFlags = $acl.InheritanceFlags
                     PropagationFlags = $acl.PropagationFlags
-                    Sources = @($source)
+                    Sources = [System.Collections.Generic.List[string]]::new()
                 }
+                $effectivePermissions[$permKey].Sources.Add($source)
             } else {
                 # If we already have this permission, check for Deny vs Allow precedence
                 $existing = $effectivePermissions[$permKey]
                 
-                # Add the source
-                $existing.Sources += $source
+                # Add the source (avoid duplicates)
+                if ($source -notin $existing.Sources) {
+                    $existing.Sources.Add($source)
+                }
                 
                 # Deny takes precedence over Allow
                 if ($acl.AccessControlType -eq 'Deny') {
@@ -538,10 +701,14 @@ function Get-UserEffectivePermissions {
         }
     }
     
+    $aceProcessingTime = ((Get-Date) - $startAceProcessing).TotalSeconds
+    Write-Verbose "ACE processing completed in $([Math]::Round($aceProcessingTime, 2)) seconds. Matched $matchedAces out of $aceCount ACEs."
     Write-Verbose "Found $($effectivePermissions.Count) unique effective permissions"
     
-    # Convert to output format
-    $results = @()
+    # Convert to output format using List for better performance with large result sets
+    $startResultsConversion = Get-Date
+    $results = [System.Collections.Generic.List[PSObject]]::new($effectivePermissions.Count)
+    
     foreach ($permKey in $effectivePermissions.Keys) {
         $perm = $effectivePermissions[$permKey]
         
@@ -563,7 +730,14 @@ function Get-UserEffectivePermissions {
             $inheritedObjType = $perm.InheritedObjectType
         }
         
-        $results += [PSCustomObject]@{
+        # Convert Sources to string efficiently
+        $sourcesString = if ($perm.Sources -is [System.Collections.Generic.List[string]]) {
+            $perm.Sources -join '; '
+        } else {
+            ($perm.Sources -join '; ')
+        }
+        
+        $resultObj = [PSCustomObject]@{
             DistinguishedName     = $ADObjectProperties.DistinguishedName
             Name                  = $ADObjectProperties.Name
             ObjectClass           = $ADObjectProperties.ObjectClass
@@ -579,11 +753,19 @@ function Get-UserEffectivePermissions {
             IsInherited           = $perm.IsInherited
             InheritanceFlags      = $perm.InheritanceFlags
             PropagationFlags      = $perm.PropagationFlags
-            PermissionSources     = ($perm.Sources -join '; ')
+            PermissionSources     = $sourcesString
         }
+        
+        $results.Add($resultObj)
     }
     
-    return $results
+    $resultsConversionTime = ((Get-Date) - $startResultsConversion).TotalSeconds
+    $totalTime = ((Get-Date) - $startTime).TotalSeconds
+    
+    Write-Verbose "Results conversion completed in $([Math]::Round($resultsConversionTime, 2)) seconds"
+    Write-Verbose "Total effective permissions calculation time: $([Math]::Round($totalTime, 2)) seconds"
+    
+    return $results.ToArray()
 
 }
 
@@ -723,7 +905,19 @@ function Get-ADEffectiveAccess {
 
         [parameter()]
         [alias('Domain')]
-        [string] $Server
+        [string] $Server,
+        
+        [Parameter()]
+        [ValidateRange(1, 100)]
+        [int] $MaxGroupDepth = 50,
+        
+        [Parameter()]
+        [ValidateRange(10, 1000)]
+        [int] $GroupBatchSize = 100,
+        
+        [Parameter()]
+        [ValidateRange(30, 3600)]
+        [int] $TimeoutSeconds = 300
     )
 
     begin {

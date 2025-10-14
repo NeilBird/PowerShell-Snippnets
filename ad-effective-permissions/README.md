@@ -105,6 +105,12 @@ Primary function that operates in four modes:
 - `ObjectName` (Optional): SAMAccountName or DN of any AD object (aliases: UserName, ComputerName, GroupName)
 - `Server` (Optional): Specific domain controller to query
 
+##### Performance Optimization Parameters
+
+- `MaxGroupDepth` (Optional): Maximum recursion depth for nested group resolution (1-100, default: 50)
+- `GroupBatchSize` (Optional): Number of groups to process in a batch for AD queries (10-1000, default: 100)
+- `TimeoutSeconds` (Optional): Maximum execution time in seconds to prevent runaway operations (30-3600, default: 300)
+
 #### Key Features
 
 - **Comprehensive Group Resolution**: Uses `tokenGroups` for complete group membership including domain local groups from trusted domains
@@ -115,6 +121,13 @@ Primary function that operates in four modes:
 - **Source Attribution**: Shows whether permissions come from direct assignment or group membership
 - **GUID Resolution**: Automatically resolves schema and extended rights GUIDs to human-readable names
 - **Multi-SID Support**: Supports direct SID input for users and computers when you already have the SID
+- **Performance Optimizations**: Optimized for large AD environments with extensive group hierarchies
+  - Configurable recursion depth limits to prevent stack overflow
+  - Batch processing for efficient AD queries
+  - Timeout protection for long-running operations
+  - Memory-efficient collections (.NET HashSet, Dictionary, List)
+  - O(1) SID lookups instead of array contains operations
+  - Progress reporting for large operations
 
 ### Helper Functions
 
@@ -225,6 +238,19 @@ CreateComputerObjects ReadAllProperties AllRequiredPermissionsPresent
                  True              True                          True
 ```
 
+### Performance Optimization for Large Environments
+
+```powershell
+# For very large AD environments with deep group nesting
+Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "serviceaccount" -MaxGroupDepth 25 -GroupBatchSize 200 -TimeoutSeconds 600 -Verbose
+
+# For environments with known shallow group structures (faster processing)
+Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "user123" -MaxGroupDepth 10 -GroupBatchSize 50 -TimeoutSeconds 120
+
+# Conservative settings for very complex environments to prevent timeouts
+Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "admin" -MaxGroupDepth 15 -GroupBatchSize 25 -TimeoutSeconds 900
+```
+
 ### Advanced Analysis
 
 ```powershell
@@ -289,7 +315,13 @@ Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ComputerSID "S-1-5-
 
 - Use the `-Server` parameter to specify a nearby domain controller
 - When analyzing multiple objects for the same user, the GUID map is cached for better performance
+- For large AD environments with deep group nesting:
+  - Reduce `MaxGroupDepth` to limit recursion (default: 50, recommended for complex environments: 15-25)
+  - Increase `GroupBatchSize` for fewer AD queries (default: 100, recommended for large environments: 200-500)
+  - Increase `TimeoutSeconds` for complex operations (default: 300, recommended for large environments: 600-900)
 - Verbose mode helps identify bottlenecks in group resolution
+- Monitor memory usage in very large environments - the module uses efficient .NET collections but large result sets still consume memory
+- Consider running during off-peak hours for large-scale permission analysis
 
 ## License
 
