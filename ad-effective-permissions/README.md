@@ -212,6 +212,7 @@ CreateDeleteComputerObjects ReadPropertyAllObjects ms-FVE-RecoveryInformation Al
                        True                   True                       True                          True
 
 # Check Cluster CNO permissions
+# Post-cluster deployment only, such as for troubleshooting cluster validation report failures for AD Organizational Unit permissions.
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $ClusterCNO = "cluster01-cl"
 $ClusterPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $ClusterCNO -Verbose
