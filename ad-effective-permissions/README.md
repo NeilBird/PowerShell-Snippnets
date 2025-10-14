@@ -102,7 +102,7 @@ Primary function that operates in four modes:
 - `ADObject` (Mandatory): Distinguished Name of the AD object to analyze (alias: DistinguishedName)
 - `UserSID` (Optional): Security Identifier of user for effective permissions calculation
 - `ComputerSID` (Optional): Security Identifier of computer for effective permissions calculation
-- `ObjectName` (Optional): SAMAccountName or DN of any AD object (user, computer, or group). Can also be used with aliases: UserName, ComputerName, GroupName
+- `ObjectName` (Optional): SAMAccountName or DN of any AD object (user, computer, or group). Can also be used with aliases: UserName, ComputerName, GroupName. Accepts both SAM account names and full Distinguished Names
 - `Server` (Optional): Specific domain controller to query
 
 ##### Performance Optimization Parameters

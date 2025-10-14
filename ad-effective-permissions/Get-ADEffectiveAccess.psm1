@@ -43,6 +43,7 @@
     The function will automatically detect the object type and resolve it to a SID, then analyze both direct permissions and 
     permissions inherited through all group memberships. For computer objects, you can specify the name with or without the trailing $ character.
     Can also be used with aliases: UserName, ComputerName, GroupName.
+    Accepts both SAM account names (max 20 chars) and full Distinguished Names (longer).
 
 .PARAMETER Server
     The Active Directory server to query. If not specified, uses the current domain.
