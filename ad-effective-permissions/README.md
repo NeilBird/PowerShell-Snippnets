@@ -1,15 +1,45 @@
-# Active Directory Effective Permissions
+# Active Directory Effective Permissions Module
 
-This folder contains PowerShell scripts for analyzing effective permissions on Active Directory objects, with advanced support for user-specific permission analysis and group membership resolution.
+This folder contains a PowerShell module for analyzing effective permissions on Active Directory objects, with advanced support for user-specific, computer-specific, and group-specific permission analysis.
 
 ## Overview
 
-The `Get-EffectiveAccess.ps1` script provides comprehensive functionality to:
+The `Get-ADEffectiveAccess` module provides comprehensive functionality to:
 
 - Retrieve all permissions for any Active Directory object
-- Calculate effective permissions for a specific user, including permissions inherited through group memberships
+- Calculate effective permissions for a specific user, computer, or group including permissions inherited through group memberships
 - Analyze permission inheritance through nested group structures
-- Check for specific required permissions (BitLocker recovery, computer object management)
+- Check for specific required permissions (BitLocker recovery, computer object management, cluster CNO permissions)
+- Handle computer object names with automatic $ suffix resolution
+
+## Installation
+
+### Option 1: Import from Local Path
+
+```powershell
+# Navigate to the module directory
+cd "C:\path\to\PowerShell-Snippnets\ad-effective-permissions"
+
+# Import the module
+Import-Module .\Get-ADEffectiveAccess.psd1
+```
+
+### Option 2: Copy to PowerShell Module Path
+
+```powershell
+# Find your PowerShell module path
+$env:PSModulePath -split ';'
+
+# Copy the module files to one of the module paths
+# Example: Copy to user modules directory
+$userModulePath = "$env:USERPROFILE\Documents\PowerShell\Modules\Get-ADEffectiveAccess"
+New-Item -Path $userModulePath -ItemType Directory -Force
+Copy-Item ".\Get-ADEffectiveAccess.psm1" -Destination $userModulePath
+Copy-Item ".\Get-ADEffectiveAccess.psd1" -Destination $userModulePath
+
+# Import the module
+Import-Module Get-ADEffectiveAccess
+```
 
 ## Prerequisites
 
@@ -46,53 +76,69 @@ Install-Module -Name ActiveDirectory -Force -AllowClobber
 - **Access to security descriptors** (typically requires Domain Admin or delegated permissions)
 - **Network connectivity** to domain controllers
 
-## Files
+## Module Files
 
-### Get-EffectiveAccess.ps1
+### Get-ADEffectiveAccess.psm1
 
-Main script containing the `Get-EffectiveAccess` function and supporting helper functions.
+Main module file containing the `Get-ADEffectiveAccess` function and supporting helper functions.
+
+### Get-ADEffectiveAccess.psd1
+
+Module manifest file defining module metadata, dependencies, and exported functions.
 
 ## Functions
 
-### Get-EffectiveAccess
+### Get-ADEffectiveAccess
 
-Primary function that operates in three modes:
+Primary function that operates in four modes:
 
 1. **All Permissions Mode (Default)**: Returns all ACEs for an AD object
 2. **User SID Mode**: Calculates effective permissions for a specific user SID
-3. **Username Mode**: Calculates effective permissions for a specific username (SAMAccountName)
+3. **Computer SID Mode**: Calculates effective permissions for a specific computer SID
+4. **Object Name Mode**: Calculates effective permissions for any AD object by name (auto-detects object type)
 
 #### Parameters
 
-- `ADObject` (Mandatory): Distinguished Name of the AD object to analyze
+- `Object` (Mandatory): Distinguished Name of the AD object to analyze (alias: ADObject, DistinguishedName)
 - `UserSID` (Optional): Security Identifier of user for effective permissions calculation
-- `UserName` (Optional): SAMAccountName of user for effective permissions calculation
+- `ComputerSID` (Optional): Security Identifier of computer for effective permissions calculation
+- `ObjectName` (Optional): SAMAccountName or DN of any AD object (aliases: UserName, ComputerName, GroupName)
 - `Server` (Optional): Specific domain controller to query
 
 #### Key Features
 
 - **Comprehensive Group Resolution**: Uses `tokenGroups` for complete group membership including domain local groups from trusted domains
 - **Nested Group Support**: Recursively resolves all group memberships including nested groups
+- **Computer Name Flexibility**: Handles computer names with or without the trailing $ character automatically
+- **Automatic Object Type Detection**: Identifies whether an object is a user, computer, or group automatically
 - **Permission Precedence**: Properly handles Deny vs Allow permission precedence
 - **Source Attribution**: Shows whether permissions come from direct assignment or group membership
 - **GUID Resolution**: Automatically resolves schema and extended rights GUIDs to human-readable names
-- **BitLocker Permission Checking**: Includes specialized checking for BitLocker recovery permissions
+- **Multi-SID Support**: Supports direct SID input for users and computers when you already have the SID
 
 ### Helper Functions
 
+#### Resolve-ADObjectNameToSID
+
+Converts any AD object name (user, computer, or group) to a Security Identifier (SID) with automatic object type detection. Handles computer names with or without the $ suffix.
+
 #### Resolve-UserNameToSID
 
-Converts a SAMAccountName to a Security Identifier (SID).
+Converts a user SAMAccountName to a Security Identifier (SID).
 
-#### Get-UserGroupMemberships
+#### Resolve-ComputerNameToSID
 
-Recursively retrieves all group memberships for a user, including nested groups.
+Converts a computer SAMAccountName to a Security Identifier (SID).
+
+#### Get-ADObjectGroupMemberships
+
+Recursively retrieves all group memberships for a user or computer, including nested groups.
 
 #### Get-UserEffectivePermissions
 
 Core function that calculates effective permissions by analyzing user and group ACEs.
 
-#### Test-RequiredPermissions
+#### Test-LCMUserRequiredPermissions
 
 Checks for specific required permissions including:
 
@@ -100,68 +146,101 @@ Checks for specific required permissions including:
 - ReadProperty on all objects
 - GenericAll on BitLocker recovery information objects
 
+#### Test-ClusterCNORequiredPermissions
+
+Checks for specific required permissions for Cluster Computer Name Object (CNO) including:
+
+- CreateChild on computer objects with "This object and all descendant objects" inheritance
+- ReadProperty on all objects with "This object and all descendant objects" inheritance
+
 ## Usage Examples
 
 ### Basic Permission Analysis
 
 ```powershell
-# Import the script
-. .\Get-EffectiveAccess.ps1
+# Import the module
+Import-Module .\Get-ADEffectiveAccess.psd1
 
 # Get all permissions for a user object
-Get-EffectiveAccess -ADObject "CN=TestUser,CN=Users,DC=contoso,DC=com"
+Get-ADEffectiveAccess -Object "CN=TestUser,CN=Users,DC=contoso,DC=com"
 
 # Get all permissions for an OU
-Get-EffectiveAccess -ADObject "OU=TestOU,DC=contoso,DC=com"
+Get-ADEffectiveAccess -Object "OU=TestOU,DC=contoso,DC=com"
 ```
 
-### User-Specific Effective Permissions
+### Object-Specific Effective Permissions
 
 ```powershell
 # Calculate effective permissions by user SID
-Get-EffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001"
+Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001"
 
-# Calculate effective permissions by username
-Get-EffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserName "jdoe"
+# Calculate effective permissions by computer SID
+Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ComputerSID "S-1-5-21-1234567890-1234567890-1234567890-1002"
+
+# Calculate effective permissions by object name (auto-detects type)
+Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "jdoe"          # User
+Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "SERVER01"      # Computer (with or without $)
+Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "SERVER01$"     # Computer
+Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "Domain Admins" # Group
 
 # Use specific domain controller
-Get-EffectiveAccess -ADObject "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -UserName "jsmith" -Server "dc01.contoso.com"
+Get-ADEffectiveAccess -Object "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -ObjectName "jsmith" -Server "dc01.contoso.com"
 ```
 
 ### Validate Azure Local permissions for OU
 
-Example commands to download the script, import it and confirm that an Azure Local OU has required permissions delegated for the LifeCycle Manager (LCM) user (deployment user) account:
+Example commands to download the module, import it and confirm that an Azure Local OU has required permissions delegated for the LifeCycle Manager (LCM) user (deployment user) account:
 
 ```PowerShell
-Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/ad-effective-permissions/Get-EffectiveAccess.ps1' -OutFile .\Get-EffectiveAccess.ps1
+# Download the module files
+Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/ad-effective-permissions/Get-ADEffectiveAccess.psm1' -OutFile .\Get-ADEffectiveAccess.psm1
+Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/ad-effective-permissions/Get-ADEffectiveAccess.psd1' -OutFile .\Get-ADEffectiveAccess.psd1
 
-Import-Module .\Get-EffectiveAccess.ps1
+# Import the module
+Import-Module .\Get-ADEffectiveAccess.psd1
 
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $LCMUser = "LCM-UserName"
 
-$results = Get-EffectiveAccess -ADObject $OU -UserName $LCMUser -Verbose
+$LCMUserPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $LCMUser -Verbose
 
-Test-RequiredPermissions $results
+Test-LCMUserRequiredPermissions $LCMUserPermissions
 
 
 CreateDeleteComputerObjects ReadPropertyAllObjects ms-FVE-RecoveryInformation AllRequiredPermissionsPresent
 --------------------------- ---------------------- -------------------------- -----------------------------
                        True                   True                       True                          True
+
+# Check Cluster CNO permissions
+$OU = "CN=AzureLocalOU,DC=contoso,DC=com"
+$ClusterCNO = "cluster01-cl"
+$ClusterPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $ClusterCNO -Verbose
+
+Test-ClusterCNORequiredPermissions $ClusterPermissions
+
+
+CreateComputerObjects ReadAllProperties AllRequiredPermissionsPresent
+--------------------- ----------------- -----------------------------
+                 True              True                          True
 ```
 
 ### Advanced Analysis
 
 ```powershell
 # Get effective permissions with verbose output for troubleshooting
-Get-EffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserName "serviceaccount" -Verbose
+Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "serviceaccount" -Verbose
 
 # Check permissions for multiple objects
 $objects = @(
     "CN=Computer1,CN=Computers,DC=contoso,DC=com",
     "CN=Computer2,CN=Computers,DC=contoso,DC=com"
 )
-$objects | ForEach-Object { Get-EffectiveAccess -ADObject $_ -UserName "admin" }
+$objects | ForEach-Object { Get-ADEffectiveAccess -Object $_ -ObjectName "admin" }
+
+# Compare different ways to specify the same computer
+Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "SERVER01"      # Auto-detects computer
+Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ObjectName "SERVER01$"     # Explicit computer name
+Get-ADEffectiveAccess -Object "CN=TestOU,DC=contoso,DC=com" -ComputerSID "S-1-5-21-..." # Direct SID
 ```
 
 ## Output Properties
@@ -181,15 +260,17 @@ $objects | ForEach-Object { Get-EffectiveAccess -ADObject $_ -UserName "admin" }
 
 ### Effective Permissions Mode Output
 
-- `UserSID`: SID of the user being analyzed
+- `UserSID`: SID of the user/computer/group being analyzed
 - `EffectiveRights`: Calculated effective permissions
-- `PermissionSources`: Shows whether permissions come from user or group assignment
+- `PermissionSources`: Shows whether permissions come from direct assignment or group membership
 - `RequiredPermissionCheck`: Results of BitLocker/computer object permission analysis
 
 ## Notes
 
-- When using UserSID or UserName parameters, the function analyzes both direct user permissions and all permissions inherited through group memberships
+- When using UserSID, ComputerSID, or ObjectName parameters, the function analyzes both direct permissions and all permissions inherited through group memberships
 - Permission precedence follows Active Directory rules where Deny takes precedence over Allow
+- Computer names can be specified with or without the trailing $ character - the module handles both automatically
+- The ObjectName parameter automatically detects object types (user, computer, group) for flexible usage
 - The script uses `tokenGroups` for comprehensive group membership resolution including domain local groups from trusted domains
 - GUID maps are automatically built for schema and extended rights resolution
 - Verbose mode provides detailed troubleshooting information about group resolution and permission calculation

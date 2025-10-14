@@ -15,35 +15,16 @@
 
 <#
 .SYNOPSIS
-    Gets effective access permissions for Active Directory objects, with support for user-specific effective permissions analysis.
+    Gets effective access permissions for Active Directory objects, with support for object-specific effective permissions analysis.
 
 .DESCRIPTION
-    This function can operate in three modes:
+    This function can operate in four modes:
     1. Get all permissions for an AD object (default behavior)
     2. Calculate effective permissions for a specific user SID, including permissions inherited through group memberships
-    3. Calculate effective permissions for a specific user by SAMAccountName, including permissions inherited through group memberships
+    3. Calculate effective permissions for a specific computer SID, including permissions inherited through group memberships
+    4. Calculate effective permissions for a specific AD object (user, computer, or group) by name, including permissions inherited through group memberships
 
-    When a UserSID or UserName            if ($effectiveUserSID) {
-                # Return effective permissions for the specified user
-                $userPermissions = Get-UserEffectivePermissions -UserSID $effectiveUserSID -ADObject $object -GUIDMap $GUIDMap -Server $Server
-                
-                # Check for required permissions
-                if ($userPermissions -and $userPermissions.Count -gt 0) {
-                    $permissionCheck = Test-RequiredPermissions -EffectivePermissions $userPermissions
-                    Write-Verbose "Permission Check Results:"
-                    Write-Verbose "  CreateDeleteComputerObjects: $($permissionCheck.CreateDeleteComputerObjects)"
-                    Write-Verbose "  ReadPropertyAllObjects: $($permissionCheck.ReadPropertyAllObjects)"
-                    Write-Verbose "  GenericAllRecoveryInfo: $($permissionCheck.GenericAllRecoveryInfo)"
-                    Write-Verbose "  All Required Permissions Present: $($permissionCheck.AllRequiredPermissionsPresent)"
-                    
-                    # Add the permission check results as a property to each permission object
-                    foreach ($perm in $userPermissions) {
-                        $perm | Add-Member -NotePropertyName 'RequiredPermissionCheck' -NotePropertyValue $permissionCheck -Force
-                    }
-                }
-                
-                return $userPermissions
-            }provided, the function analyzes the user's direct permissions and all permissions inherited 
+    When a UserSID, ComputerSID, or ObjectName is provided, the function analyzes the object's direct permissions and all permissions inherited 
     through group memberships (including nested groups) to provide a comprehensive view of effective access.
 
 .PARAMETER Object
@@ -53,56 +34,177 @@
     The Security Identifier (SID) of a user for whom to calculate effective permissions. When provided, the function
     will analyze both direct user permissions and permissions inherited through all group memberships.
 
-.PARAMETER UserName
-    The SAMAccountName of a user for whom to calculate effective permissions. The function will resolve this to a SID
-    and then analyze both direct user permissions and permissions inherited through all group memberships.
+.PARAMETER ComputerSID
+    The Security Identifier (SID) of a computer for whom to calculate effective permissions. When provided, the function
+    will analyze both direct computer permissions and permissions inherited through all group memberships.
+
+.PARAMETER ObjectName
+    The SAMAccountName or Distinguished Name of an AD object (user, computer, or group) for whom to calculate effective permissions. 
+    The function will automatically detect the object type and resolve it to a SID, then analyze both direct permissions and 
+    permissions inherited through all group memberships. Can also be used with aliases: UserName, ComputerName, GroupName.
 
 .PARAMETER Server
     The Active Directory server to query. If not specified, uses the current domain.
 
 .EXAMPLE
-    Get-EffectiveAccess -ADObject "CN=TestUser,CN=Users,DC=contoso,DC=com"
+    Get-ADEffectiveAccess -Object "CN=TestUser,CN=Users,DC=contoso,DC=com"
     
     Gets all permissions for the specified AD object.
 
 .EXAMPLE
-    Get-EffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001"
+    Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001"
     
     Calculates the effective permissions for the specified user SID on the given AD object, including permissions 
     inherited through group memberships.
 
 .EXAMPLE
-    Get-EffectiveAccess -ADObject "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -UserName "jdoe"
+    Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ComputerSID "S-1-5-21-1234567890-1234567890-1234567890-1002"
+    
+    Calculates the effective permissions for the specified computer SID on the given AD object, including permissions 
+    inherited through group memberships.
+
+.EXAMPLE
+    Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "jdoe"
     
     Calculates the effective permissions for user 'jdoe' on the given AD object, including permissions 
     inherited through group memberships.
 
 .EXAMPLE
-    Get-EffectiveAccess -ADObject "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -UserName "jsmith" -Server "dc01.contoso.com"
+    Get-ADEffectiveAccess -Object "CN=TestOU,OU=TestOUs,DC=contoso,DC=com" -ObjectName "WORKSTATION01$"
     
-    Calculates effective permissions for user 'jsmith' on a specific server.
+    Calculates the effective permissions for computer 'WORKSTATION01' on the given AD object, including permissions 
+    inherited through group memberships.
 
 .EXAMPLE
-    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -ADObject $adObject -Server "dc01.contoso.com"
+    Get-ADEffectiveAccess -Object "CN=TestComputer,CN=Computers,DC=contoso,DC=com" -ObjectName "Domain Admins" -Server "dc01.contoso.com"
+    
+    Calculates effective permissions for the 'Domain Admins' group on a specific server.
+
+.EXAMPLE
+    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -Object $adObject -Server "dc01.contoso.com"
     Calculates effective permissions for the specified user SID on the provided AD object, including permissions 
     inherited through group memberships. The GUID map will be automatically built if not provided.
 
 .EXAMPLE
-    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -ADObject $adObject -GUIDMap $GUIDMap -Server "dc01.contoso.com"
+    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -Object $adObject -GUIDMap $GUIDMap -Server "dc01.contoso.com"
     Calculates effective permissions for the specified user SID on the provided AD object using a pre-built GUID map 
     for better performance when calling the function multiple times.
 
 .NOTES
-    When using UserSID or UserName parameter:
+    When using UserSID, ComputerSID, or ObjectName parameter:
     - The function recursively resolves all group memberships including nested groups
     - Permission precedence follows AD rules (Deny takes precedence over Allow)
     - Results include source attribution showing whether permissions come from direct assignment or group membership
     - Uses tokenGroups for comprehensive group membership resolution including domain local groups from trusted domains
-    - UserName parameter is resolved to SID using the samAccountName attribute
+    - ObjectName parameter is resolved to SID using the samAccountName or distinguishedName attribute
 #>
  
 #requires -modules ActiveDirectory
 Import-Module ActiveDirectory -ErrorAction Stop
+
+# Helper function to resolve any AD object name to SID and detect object type
+# Handles computer names with or without the trailing $ character
+function Resolve-ADObjectNameToSID {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $ObjectName,
+        
+        [Parameter()]
+        [string] $Server
+    )
+    
+    Write-Verbose "Attempting to resolve object name: '$ObjectName'"
+    
+    try {
+        # Try to find the object by samAccountName across different object types
+        $objectParams = @{
+            Filter = "samAccountName -eq '$ObjectName'"
+            Properties = 'objectSID', 'objectClass', 'samAccountName'
+            ErrorAction = 'SilentlyContinue'
+        }
+        if ($Server) { $objectParams['Server'] = $Server }
+        
+        Write-Verbose "Searching for object with samAccountName: '$ObjectName'"
+        # Try as generic AD object first to get all types
+        $adObject = Get-ADObject @objectParams
+        
+        # If not found and the name doesn't end with $, try adding $ for computer accounts
+        if (-not $adObject -and -not $ObjectName.EndsWith('$')) {
+            Write-Verbose "Object not found by samAccountName, trying with $ suffix for computer accounts..."
+            $objectParams['Filter'] = "samAccountName -eq '$ObjectName$'"
+            Write-Verbose "Searching for object with samAccountName: '$ObjectName$'"
+            $adObject = Get-ADObject @objectParams
+        }
+        
+        # If still not found and the name ends with $, try without $ 
+        if (-not $adObject -and $ObjectName.EndsWith('$')) {
+            Write-Verbose "Object not found with $ suffix, trying without $ suffix..."
+            $trimmedName = $ObjectName.TrimEnd('$')
+            $objectParams['Filter'] = "samAccountName -eq '$trimmedName'"
+            Write-Verbose "Searching for object with samAccountName: '$trimmedName'"
+            $adObject = Get-ADObject @objectParams
+        }
+        
+        if ($adObject -and $adObject.objectSID) {
+            $objectType = switch ($adObject.objectClass[-1]) {  # Get the most specific class
+                'user' { 'User' }
+                'computer' { 'Computer' }
+                'group' { 'Group' }
+                default { 'Unknown' }
+            }
+            
+            Write-Verbose "Found $objectType object: $($adObject.DistinguishedName) with samAccountName: $($adObject.samAccountName)"
+            
+            return [PSCustomObject]@{
+                SID = $adObject.objectSID.Value
+                ObjectType = $objectType
+                DistinguishedName = $adObject.DistinguishedName
+                ObjectClass = $adObject.objectClass
+                SAMAccountName = $adObject.samAccountName
+            }
+        }
+        
+        # If not found by samAccountName, try as Distinguished Name
+        try {
+            $dnParams = @{
+                Identity = $ObjectName
+                Properties = 'objectSID', 'objectClass', 'samAccountName'
+                ErrorAction = 'Stop'
+            }
+            if ($Server) { $dnParams['Server'] = $Server }
+            
+            $adObject = Get-ADObject @dnParams
+            
+            if ($adObject -and $adObject.objectSID) {
+                $objectType = switch ($adObject.objectClass[-1]) {
+                    'user' { 'User' }
+                    'computer' { 'Computer' }
+                    'group' { 'Group' }
+                    default { 'Unknown' }
+                }
+                
+                Write-Verbose "Found $objectType object by DN: $($adObject.DistinguishedName)"
+                
+                return [PSCustomObject]@{
+                    SID = $adObject.objectSID.Value
+                    ObjectType = $objectType
+                    DistinguishedName = $adObject.DistinguishedName
+                    ObjectClass = $adObject.objectClass
+                    SAMAccountName = $adObject.samAccountName
+                }
+            }
+        }
+        catch {
+            # Not a valid DN, continue with error
+        }
+        
+        throw "Object '$ObjectName' not found or SID could not be retrieved"
+    }
+    catch {
+        throw "Failed to resolve object name '$ObjectName' to SID: $($_.Exception.Message)"
+    }
+}
 
 # Helper function to resolve username to SID
 function Resolve-UserNameToSID {
@@ -136,12 +238,44 @@ function Resolve-UserNameToSID {
     }
 }
 
-# Helper function to get all group memberships recursively
-function Get-UserGroupMemberships {
+# Helper function to resolve computer name to SID
+function Resolve-ComputerNameToSID {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string] $UserSID,
+        [string] $ComputerName,
+        
+        [Parameter()]
+        [string] $Server
+    )
+    
+    try {
+        $computerParams = @{
+            Identity = $ComputerName
+            Properties = 'objectSID'
+            ErrorAction = 'Stop'
+        }
+        if ($Server) { $computerParams['Server'] = $Server }
+        
+        $computer = Get-ADComputer @computerParams
+        
+        if ($computer -and $computer.objectSID) {
+            return $computer.objectSID.Value
+        } else {
+            throw "Computer not found or SID could not be retrieved"
+        }
+    }
+    catch {
+        throw "Failed to resolve computer name '$ComputerName' to SID: $($_.Exception.Message)"
+    }
+}
+
+# Helper function to get all group memberships recursively for users or computers
+function Get-ADObjectGroupMemberships {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $ObjectSID,
         
         [Parameter()]
         [string] $Server,
@@ -153,33 +287,36 @@ function Get-UserGroupMemberships {
     $allGroups = @()
     
     try {
-        # Get the user object first - we need to find the user by SID first
-        $userParams = @{
-            Filter = "objectSID -eq '$UserSID'"
-            Properties = 'memberOf'
+        # First, try to find the object by SID - could be user or computer
+        $objectParams = @{
+            Filter = "objectSID -eq '$ObjectSID'"
+            Properties = 'memberOf', 'objectClass'
             ErrorAction = 'Stop'
         }
-        if ($Server) { $userParams['Server'] = $Server }
+        if ($Server) { $objectParams['Server'] = $Server }
         
-        $user = Get-ADUser @userParams
+        $adObject = Get-ADObject @objectParams
         
-        if (-not $user) {
-            throw "User with SID $UserSID not found"
+        if (-not $adObject) {
+            throw "Object with SID $ObjectSID not found"
         }
         
-        # Now get the user with tokenGroups using the Identity (DN or GUID)
+        Write-Verbose "Found object: $($adObject.DistinguishedName) of class: $($adObject.objectClass)"
+        
+        # Now get the object with tokenGroups using the Identity (DN or GUID)
+        # Use Get-ADObject since it works for both users and computers
         $tokenGroupsParams = @{
-            Identity = $user.ObjectGUID
+            Identity = $adObject.ObjectGUID
             Properties = 'tokenGroups'
             ErrorAction = 'Stop'
         }
         if ($Server) { $tokenGroupsParams['Server'] = $Server }
         
-        $userWithTokenGroups = Get-ADUser @tokenGroupsParams
+        $objectWithTokenGroups = Get-ADObject @tokenGroupsParams
         
         # Use tokenGroups for more comprehensive group membership (includes domain local groups from trusted domains)
-        if ($userWithTokenGroups.tokenGroups) {
-            foreach ($groupSID in $userWithTokenGroups.tokenGroups) {
+        if ($objectWithTokenGroups.tokenGroups) {
+            foreach ($groupSID in $objectWithTokenGroups.tokenGroups) {
                 $sidString = $groupSID.Value
                 
                 if (-not $ProcessedGroups.ContainsKey($sidString)) {
@@ -216,7 +353,7 @@ function Get-UserGroupMemberships {
                                         if ($nestedGroup -and $nestedGroup.objectSID) {
                                             $nestedSID = $nestedGroup.objectSID.Value
                                             if (-not $ProcessedGroups.ContainsKey($nestedSID)) {
-                                                $nestedGroups = Get-UserGroupMemberships -UserSID $nestedSID -Server $Server -ProcessedGroups $ProcessedGroups
+                                                $nestedGroups = Get-ADObjectGroupMemberships -ObjectSID $nestedSID -Server $Server -ProcessedGroups $ProcessedGroups
                                                 $allGroups += $nestedGroups
                                             }
                                         }
@@ -236,7 +373,7 @@ function Get-UserGroupMemberships {
         }
     }
     catch {
-        Write-Error "Failed to get user information for SID: $UserSID. Error: $($_.Exception.Message)"
+        Write-Error "Failed to get object information for SID: $UserSID. Error: $($_.Exception.Message)"
     }
     
     return $allGroups
@@ -333,11 +470,11 @@ function Get-UserEffectivePermissions {
     $effectivePermissions = @{}
     $permissionSources = @{}
     
-    # Get all groups the user belongs to
-    $userGroups = Get-UserGroupMemberships -UserSID $effectiveUserSID -Server $Server
-    $allSIDs = @($effectiveUserSID) + $userGroups.SID
+    # Get all groups the user/computer belongs to
+    $objectGroups = Get-ADObjectGroupMemberships -ObjectSID $effectiveUserSID -Server $Server
+    $allSIDs = @($effectiveUserSID) + $objectGroups.SID
     
-    Write-Verbose "Analyzing permissions for user $effectiveUserSID and $($userGroups.Count) groups"
+    Write-Verbose "Analyzing permissions for object $effectiveUserSID and $($objectGroups.Count) groups"
     Write-Verbose "User and group SIDs: $($allSIDs -join ', ')"
     $adObjParams['Identity'] = $ADObject
     $ADObjectProperties = Get-ADObject @adObjParams
@@ -364,9 +501,9 @@ function Get-UserEffectivePermissions {
             Write-Verbose "MATCH FOUND: ACE applies to user/group - $aclSID"
             # Determine the source of the permission
             $source = if ($aclSID -eq $effectiveUserSID) {
-                "Direct User Assignment"
+                "Direct Assignment"
             } else {
-                $groupInfo = $userGroups | Where-Object { $_.SID -eq $aclSID } | Select-Object -First 1
+                $groupInfo = $objectGroups | Where-Object { $_.SID -eq $aclSID } | Select-Object -First 1
                 "Group: $($groupInfo.Name)"
             }
             
@@ -451,7 +588,7 @@ function Get-UserEffectivePermissions {
 }
 
 # Helper function to check for specific required permissions
-function Test-RequiredPermissions {
+function Test-LCMUserRequiredPermissions {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -513,7 +650,57 @@ function Test-RequiredPermissions {
     }
 }
 
-function Get-EffectiveAccess {
+# Helper function to check for specific required permissions for Cluster Computer Name Object (CNO)
+function Test-ClusterCNORequiredPermissions {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [object[]] $EffectivePermissions
+    )
+    
+    # Define the required permissions to check for
+    $createChildRight = [System.DirectoryServices.ActiveDirectoryRights]::CreateChild
+    $readAllPropertiesRight = [System.DirectoryServices.ActiveDirectoryRights]::ReadProperty
+    
+    # Define object type GUIDs
+    $allObjectType = [System.Guid]::Empty
+    $computersObjectType = [System.Guid]::New('bf967a86-0de6-11d0-a285-00aa003049e2')
+    
+    # Check for Rule 1: CreateChild on computer objects with "This object and all descendant objects"
+    $hasCreateComputerObjects = $false
+    foreach ($perm in $EffectivePermissions) {
+        if ($perm.AccessControlType -eq 'Allow' -and 
+            ($perm.EffectiveRights -band $createChildRight) -eq $createChildRight -and
+            $perm.ObjectTypeGUID -eq $computersObjectType -and
+            ($perm.InheritanceType -eq 'All' -or $perm.InheritanceType -eq 'Descendents')) {
+            $hasCreateComputerObjects = $true
+            Write-Verbose "Found Create Computer Objects permission with proper inheritance"
+            break
+        }
+    }
+    
+    # Check for Rule 2: ReadProperty on all objects with "This object and all descendant objects"
+    $hasReadAllProperties = $false
+    foreach ($perm in $EffectivePermissions) {
+        if ($perm.AccessControlType -eq 'Allow' -and 
+            ($perm.EffectiveRights -band $readAllPropertiesRight) -eq $readAllPropertiesRight -and
+            ($perm.ObjectTypeGUID -eq $allObjectType -or $perm.InheritedObjectTypeGUID -eq $allObjectType) -and
+            ($perm.InheritanceType -eq 'All' -or $perm.InheritanceType -eq 'Descendents')) {
+            $hasReadAllProperties = $true
+            Write-Verbose "Found Read All Properties permission with proper inheritance"
+            break
+        }
+    }
+    
+    # Return the results
+    return [PSCustomObject]@{
+        "CreateComputerObjects" = $hasCreateComputerObjects
+        "ReadAllProperties" = $hasReadAllProperties
+        "AllRequiredPermissionsPresent" = ($hasCreateComputerObjects -and $hasReadAllProperties)
+    }
+}
+
+function Get-ADEffectiveAccess {
     [CmdletBinding(DefaultParameterSetName = 'AllPermissions')]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
@@ -525,9 +712,14 @@ function Get-EffectiveAccess {
         [ValidatePattern('^S-\d-\d+-(\d+-){1,14}\d+$')]
         [string] $UserSID,
 
-        [Parameter(ParameterSetName = 'UserNameEffectivePermissions', Mandatory)]
+        [Parameter(ParameterSetName = 'ComputerSIDEffectivePermissions', Mandatory)]
+        [ValidatePattern('^S-\d-\d+-(\d+-){1,14}\d+$')]
+        [string] $ComputerSID,
+
+        [Parameter(ParameterSetName = 'ObjectNameEffectivePermissions', Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string] $UserName,
+        [alias('UserName', 'ComputerName', 'GroupName')]
+        [string] $ObjectName,
 
         [parameter()]
         [alias('Domain')]
@@ -595,15 +787,20 @@ function Get-EffectiveAccess {
 
             # Resolve the actual SID to use for effective permissions calculation
             $effectiveUserSID = $null
+            $objectInfo = $null
             
-            # Check if we're calculating effective permissions for a specific user
+            # Check if we're calculating effective permissions for a specific user or computer
             if ($PSBoundParameters.ContainsKey('UserSID')) {
                 $effectiveUserSID = $UserSID
             }
-            elseif ($PSBoundParameters.ContainsKey('UserName')) {
-                Write-Verbose "Resolving username '$UserName' to SID..."
-                $effectiveUserSID = Resolve-UserNameToSID -UserName $UserName -Server $Server
-                Write-Verbose "Resolved '$UserName' to SID: $effectiveUserSID"
+            elseif ($PSBoundParameters.ContainsKey('ComputerSID')) {
+                $effectiveUserSID = $ComputerSID
+            }
+            elseif ($PSBoundParameters.ContainsKey('ObjectName')) {
+                Write-Verbose "Resolving object name '$ObjectName' to SID..."
+                $objectInfo = Resolve-ADObjectNameToSID -ObjectName $ObjectName -Server $Server
+                $effectiveUserSID = $objectInfo.SID
+                Write-Verbose "Resolved '$ObjectName' to SID: $effectiveUserSID (Type: $($objectInfo.ObjectType))"
             }
 
             if ($effectiveUserSID) {
@@ -671,3 +868,6 @@ function Get-EffectiveAccess {
         }
     }
 }
+
+# Export the public functions
+Export-ModuleMember -Function 'Get-ADEffectiveAccess', 'Get-UserEffectivePermissions', 'Test-LCMUserRequiredPermissions', 'Test-ClusterCNORequiredPermissions'
