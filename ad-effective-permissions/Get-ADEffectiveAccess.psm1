@@ -99,12 +99,12 @@
     and extended timeout for complex group hierarchies.
 
 .EXAMPLE
-    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -Object $adObject -Server "dc01.contoso.com"
+    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -ADObject $adObject -Server "dc01.contoso.com"
     Calculates effective permissions for the specified user SID on the provided AD object, including permissions 
     inherited through group memberships. The GUID map will be automatically built if not provided.
 
 .EXAMPLE
-    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -Object $adObject -GUIDMap $GUIDMap -Server "dc01.contoso.com"
+    Get-UserEffectivePermissions -UserSID "S-1-5-21-1234567890-1234567890-1234567890-1001" -ADObject $adObject -GUIDMap $GUIDMap -Server "dc01.contoso.com"
     Calculates effective permissions for the specified user SID on the provided AD object using a pre-built GUID map 
     for better performance when calling the function multiple times.
 
@@ -488,14 +488,10 @@ function Get-ADObjectGroupMemberships {
 
 # Helper function to calculate effective permissions for a specific user
 function Get-UserEffectivePermissions {
-    [CmdletBinding(DefaultParameterSetName = 'BySID')]
+    [CmdletBinding()]
     param(
-        [Parameter(ParameterSetName = 'BySID', Mandatory)]
+        [Parameter(Mandatory)]
         [string] $UserSID,
-        
-        [Parameter(ParameterSetName = 'ByUserName', Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $UserName,
         
         [Parameter(Mandatory)]
         [object] $ADObject,
@@ -507,24 +503,13 @@ function Get-UserEffectivePermissions {
         [string] $Server
     )
     
-    # Resolve the actual SID to use
-    $effectiveUserSID = $null
-    
-    if ($PSCmdlet.ParameterSetName -eq 'BySID') {
-        # Validate SID format
-        try {
-            [void](New-Object System.Security.Principal.SecurityIdentifier($UserSID))
-            $effectiveUserSID = $UserSID
-        }
-        catch {
-            throw "Invalid UserSID format: $UserSID"
-        }
-    } elseif ($PSCmdlet.ParameterSetName -eq 'ByUserName') {
-        Write-Verbose "Resolving username '$UserName' to SID..."
-        $effectiveUserSID = Resolve-UserNameToSID -UserName $UserName -Server $Server
-        Write-Verbose "Resolved '$UserName' to SID: $effectiveUserSID"
-    } else {
-        throw "Either UserSID or UserName parameter must be provided"
+    # Validate SID format
+    try {
+        [void](New-Object System.Security.Principal.SecurityIdentifier($UserSID))
+        $effectiveUserSID = $UserSID
+    }
+    catch {
+        throw "Invalid UserSID format: $UserSID"
     }
     
     # If GUIDMap is not provided, build it automatically
