@@ -202,7 +202,7 @@ Import-Module .\Get-ADEffectiveAccess.psd1
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $LCMUser = "LCM-UserName"
 
-$LCMUserPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $LCMUser -Verbose
+$LCMUserPermissions = Get-ADEffectiveAccess -Object $OU -UserName $LCMUser -Verbose
 
 Test-LCMUserRequiredPermissions $LCMUserPermissions
 
@@ -215,7 +215,7 @@ CreateDeleteComputerObjects ReadPropertyAllObjects ms-FVE-RecoveryInformation Al
 # Post-cluster deployment only, such as for troubleshooting cluster validation report failures for AD Organizational Unit permissions.
 $OU = "CN=AzureLocalOU,DC=contoso,DC=com"
 $ClusterCNO = "cluster01-cl"
-$ClusterPermissions = Get-ADEffectiveAccess -Object $OU -ObjectName $ClusterCNO -Verbose
+$ClusterPermissions = Get-ADEffectiveAccess -Object $OU -ComputerName $ClusterCNO -Verbose
 
 Test-ClusterCNORequiredPermissions $ClusterPermissions
 
