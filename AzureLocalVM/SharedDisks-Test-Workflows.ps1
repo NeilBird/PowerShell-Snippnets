@@ -4,7 +4,7 @@ Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilB
 Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/AzureLocalVM/AzureLocalVM.psd1' -OutFile .\AzureLocalVM.psd1
 
 # Import the module:
-Import-Module .\AzureLocalVM.psd1
+Import-Module .\AzureLocalVM.psd1 -Force
 
 # /////// EDIT parameters
 [guid]$SubscriptionId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
