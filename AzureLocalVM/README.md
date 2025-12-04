@@ -4,7 +4,7 @@
 
 PowerShell module for creating and managing Azure Local (Azure Stack HCI) VMs, and testing functionality such as adding VHD Sets (shared data disks), see reference documentation: [Create Hyper-V VHD Set files](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/manage/create-vhdset-file)
 
-Note: This module is NOT support under any Microsoft support agreement or contract. The code in this module is provided as-is, and should be consider demo / example code only.
+Note: This module is NOT supported under any Microsoft support agreement or contract. The code in this module is provided as-is, for the purposes of demos or example scenario testing.
 
 ## Installation
 
