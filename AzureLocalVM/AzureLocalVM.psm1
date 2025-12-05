@@ -834,7 +834,7 @@ function Test-AzureLocalVMImage {
                             Write-Log "  OS Type: $($selectedImageObj.OSType)" -Level Info
                             
                             try {
-                                # Build the az stack-hci-vm image create command
+                                # Build the az stack-hci-vm image create command with --no-wait for async operation
                                 $azCommand = "az stack-hci-vm image create " +
                                     "--resource-group `"$ResourceGroup`" " +
                                     "--custom-location `"$CustomLocationId`" " +
@@ -843,23 +843,23 @@ function Test-AzureLocalVMImage {
                                     "--offer `"$($selectedImageObj.Offer)`" " +
                                     "--publisher `"$($selectedImageObj.Publisher)`" " +
                                     "--sku `"$($selectedImageObj.SKU)`" " +
-                                    "--subscription `"$SubscriptionId`""
+                                    "--subscription `"$SubscriptionId`" " +
+                                    "--no-wait"
                                 
                                 Write-Log "Executing Azure CLI command..." -Level Info
                                 Write-Log "Initiating marketplace image download. This process may take 10-20 minutes depending on image size..." -Level Info
-                                Write-Host ""
                                 
-                                # Execute with output streaming
+                                # Execute command with --no-wait to return immediately
                                 $azOutput = & cmd /c "$azCommand 2>&1"
                                 
-                                # Display the output
-                                if ($azOutput) {
-                                    Write-Host $azOutput -ForegroundColor Cyan
-                                }
-                                
+                                # Check if command was accepted
                                 if ($LASTEXITCODE -eq 0) {
-                                    Write-Log "Azure CLI successfully initiated image download" -Level Success
+                                    Write-Log "Azure CLI successfully initiated image download (async operation)" -Level Success
                                     Write-Log "Image resource name: $imageName" -Level Info
+                                    Write-Host ""
+                                    
+                                    # Wait a few seconds for the resource to be created
+                                    Start-Sleep -Seconds 5
                                     
                                     # Poll for completion
                                     Write-Log "Monitoring image download progress..." -Level Info
