@@ -878,7 +878,7 @@ function Test-AzureLocalVMImage {
                                     "--subscription `"$SubscriptionId`""
                                 
                                 Write-Log "Starting Azure CLI download as background job..." -Level Info
-                                Write-Log "Initiating marketplace image download. This process may take 10-20 minutes depending on image size..." -Level Info
+                                Write-Log "Initiating marketplace image download. This process may take 10-30 minutes depending on download speed..." -Level Info
                                 Write-Host ""
                                 
                                 # Start Azure CLI command as a background job
@@ -1087,7 +1087,7 @@ function Test-AzureLocalVMImage {
                                 Write-Log "Monitoring image download progress..." -Level Info
                                 
                                 # Poll the image status to monitor download progress
-                                $maxRetries = 120  # 20 minutes total (120 * 10 seconds)
+                                $maxRetries = 180  # 30 minutes total (180 * 10 seconds)
                                 $retryCount = 0
                                 $imageReady = $false
                                 
@@ -1221,7 +1221,7 @@ function Test-AzureLocalVMImage {
                                         Write-Log "Could not retrieve deployment information: $_" -Level Warning
                                     }
                                     
-                                    Write-Log "Image download did not complete within 20 minutes. Check Azure portal for current status." -Level Warning
+                                    Write-Log "Image download did not complete within 30 minutes. Check Azure portal for current status." -Level Warning
                                     Write-Log "You can check status with: Get-AzStackHCIVMImage -Name '$imageName' -ResourceGroupName '$ResourceGroup'" -Level Info
                                     return [PSCustomObject]@{
                                         ImageExists = $false
