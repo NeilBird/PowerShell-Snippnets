@@ -468,11 +468,27 @@ function Test-AzureLocalVMImage {
         } else {
             Write-Log "VM image not found: $ImageName" -Level Warning
             
-            # Display available images
+            # Display available images (only those that are fully downloaded and ready)
             if ($imageList.Count -gt 0) {
-                Write-Log "Available images in resource group:" -Level Info
-                for ($i = 0; $i -lt $imageList.Count; $i++) {
-                    Write-Log "  [$($i + 1)] $($imageList[$i].Name)" -Level Info
+                # Filter to only show images with ProvisioningState = 'Succeeded'
+                $availableImages = $imageList | Where-Object { $_.ProvisioningState -eq 'Succeeded' }
+                
+                if ($availableImages.Count -gt 0) {
+                    Write-Log "Available images in resource group:" -Level Info
+                    for ($i = 0; $i -lt $availableImages.Count; $i++) {
+                        Write-Log "  [$($i + 1)] $($availableImages[$i].Name)" -Level Info
+                    }
+                } else {
+                    Write-Log "No images currently available in resource group: $ResourceGroup" -Level Warning
+                    
+                    # Check if there are images still downloading
+                    $downloadingImages = $imageList | Where-Object { $_.ProvisioningState -in @('Creating', 'Updating', 'Accepted') }
+                    if ($downloadingImages.Count -gt 0) {
+                        Write-Log "Note: $($downloadingImages.Count) image(s) currently downloading:" -Level Info
+                        foreach ($img in $downloadingImages) {
+                            Write-Log "  - $($img.Name) (State: $($img.ProvisioningState))" -Level Info
+                        }
+                    }
                 }
             } else {
                 Write-Log "No images currently available in resource group: $ResourceGroup" -Level Warning
@@ -710,9 +726,25 @@ function Test-AzureLocalVMImage {
                     if ($selectedImageObj) {
                         Write-Log "Selected image: $($selectedImageObj.DisplayName)" -Level Info
                         
-                        # Use the SKU as the image name (e.g., "2025-datacenter-azure-edition")
-                        # This is consistent with Azure Stack HCI naming and doesn't contain invalid characters
-                        $imageName = $selectedImageObj.SKU
+                        # Create a descriptive image name combining offer and SKU
+                        # Remove spaces and special characters, replace with hyphens for Azure naming compliance
+                        $offerPart = $selectedImageObj.Offer -replace '[^a-zA-Z0-9]', '-' -replace '-+', '-'
+                        $skuPart = $selectedImageObj.SKU -replace '[^a-zA-Z0-9]', '-' -replace '-+', '-'
+                        
+                        # Combine offer and SKU for a more descriptive name (e.g., "sql2022-ws2022-standard-gen2")
+                        if ($offerPart -ne $skuPart) {
+                            $imageName = "$offerPart-$skuPart"
+                        } else {
+                            $imageName = $skuPart
+                        }
+                        
+                        # Ensure name doesn't exceed Azure resource name limits and clean up any edge cases
+                        $imageName = $imageName.Trim('-').ToLower()
+                        if ($imageName.Length -gt 80) {
+                            $imageName = $imageName.Substring(0, 80).TrimEnd('-')
+                        }
+                        
+                        Write-Log "Image resource name: $imageName" -Level Info
                         
                         # Check if this marketplace image is already downloaded or being provisioned
                         $existingImage = $imageList | Where-Object { $_.Name -eq $imageName }
@@ -825,7 +857,7 @@ function Test-AzureLocalVMImage {
                             Write-Log "Azure CLI not found. Will use REST API method (may have limitations)." -Level Warning
                         }
                         
-                        # Method 1: Azure CLI (Recommended)
+                        # Method 1: Azure CLI (Recommended) - Run as background job
                         if ($azCliAvailable -and $azCliAuthenticated) {
                             Write-Log "Using Azure CLI to download marketplace image (recommended method)..." -Level Info
                             Write-Log "  Publisher: $($selectedImageObj.Publisher)" -Level Info
@@ -834,7 +866,7 @@ function Test-AzureLocalVMImage {
                             Write-Log "  OS Type: $($selectedImageObj.OSType)" -Level Info
                             
                             try {
-                                # Build the az stack-hci-vm image create command with --no-wait for async operation
+                                # Build the az stack-hci-vm image create command
                                 $azCommand = "az stack-hci-vm image create " +
                                     "--resource-group `"$ResourceGroup`" " +
                                     "--custom-location `"$CustomLocationId`" " +
@@ -843,127 +875,154 @@ function Test-AzureLocalVMImage {
                                     "--offer `"$($selectedImageObj.Offer)`" " +
                                     "--publisher `"$($selectedImageObj.Publisher)`" " +
                                     "--sku `"$($selectedImageObj.SKU)`" " +
-                                    "--subscription `"$SubscriptionId`" " +
-                                    "--no-wait"
+                                    "--subscription `"$SubscriptionId`""
                                 
-                                Write-Log "Executing Azure CLI command..." -Level Info
+                                Write-Log "Starting Azure CLI download as background job..." -Level Info
                                 Write-Log "Initiating marketplace image download. This process may take 10-20 minutes depending on image size..." -Level Info
+                                Write-Host ""
                                 
-                                # Execute command with --no-wait to return immediately
-                                $azOutput = & cmd /c "$azCommand 2>&1"
+                                # Start Azure CLI command as a background job
+                                $job = Start-Job -ScriptBlock {
+                                    param($command)
+                                    $output = & cmd /c "$command 2>&1"
+                                    return @{
+                                        Output = $output
+                                        ExitCode = $LASTEXITCODE
+                                    }
+                                } -ArgumentList $azCommand
                                 
-                                # Check if command was accepted
-                                if ($LASTEXITCODE -eq 0) {
-                                    Write-Log "Azure CLI successfully initiated image download (async operation)" -Level Success
-                                    Write-Log "Image resource name: $imageName" -Level Info
-                                    Write-Host ""
+                                Write-Log "Azure CLI job started (Job ID: $($job.Id))" -Level Info
+                                Write-Log "Monitoring image download progress for status changes using REST API..." -Level Info
+                                Start-Sleep -Seconds 5  # Give Azure CLI time to initiate the request
+                                
+                                # Poll for completion using REST API while Azure CLI runs in background
+                                $maxRetries = 120  # 20 minutes
+                                $retryCount = 0
+                                $imageReady = $false
+                                
+                                # Get access token for REST API calls
+                                $azContext = Get-AzContext
+                                $azProfile = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile
+                                $profileClient = New-Object -TypeName Microsoft.Azure.Commands.ResourceManager.Common.RMProfileClient -ArgumentList ($azProfile)
+                                $token = $profileClient.AcquireAccessToken($azContext.Subscription.TenantId)
+                                $accessToken = $token.AccessToken
+                                
+                                $headers = @{
+                                    'Authorization' = "Bearer $accessToken"
+                                    'Content-Type' = 'application/json'
+                                }
+                                
+                                $apiVersion = "2024-01-01"
+                                $imageResourceUri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.AzureStackHCI/marketplaceGalleryImages/$imageName`?api-version=$apiVersion"
+                                
+                                while (-not $imageReady -and $retryCount -lt $maxRetries) {
+                                    Start-Sleep -Seconds 10
+                                    $retryCount++
                                     
-                                    # Wait a few seconds for the resource to be created
-                                    Start-Sleep -Seconds 5
-                                    
-                                    # Poll for completion
-                                    Write-Log "Monitoring image download progress..." -Level Info
-                                    $maxRetries = 120  # 20 minutes
-                                    $retryCount = 0
-                                    $imageReady = $false
-                                    
-                                    while (-not $imageReady -and $retryCount -lt $maxRetries) {
-                                        Start-Sleep -Seconds 10
-                                        $retryCount++
+                                    try {
+                                        $imageStatus = Invoke-RestMethod -Uri $imageResourceUri -Method Get -Headers $headers -ErrorAction SilentlyContinue
+                                        $provisioningState = $imageStatus.properties.provisioningState
                                         
-                                        try {
-                                            # Use Azure CLI to show current status with detailed output
-                                            $showCommand = "az stack-hci-vm image show --name `"$imageName`" --resource-group `"$ResourceGroup`" --subscription `"$SubscriptionId`" --output json 2>&1"
-                                            $imageStatusJson = & cmd /c $showCommand
+                                        # Display progress information if available
+                                        if ($imageStatus.properties.status.provisioningStatus) {
+                                            $detailedStatus = $imageStatus.properties.status.provisioningStatus.status
+                                            $progressPercent = $imageStatus.properties.status.progressPercentage
                                             
-                                            if ($LASTEXITCODE -eq 0) {
-                                                $imageStatus = $imageStatusJson | ConvertFrom-Json
-                                                $provisioningState = $imageStatus.provisioningState
+                                            if ($progressPercent -ne $null) {
+                                                $downloadSizeMB = $imageStatus.properties.status.downloadStatus.downloadSizeInMB
                                                 
-                                                # Display progress information if available
-                                                if ($imageStatus.properties.status.progressPercentage) {
-                                                    $progress = $imageStatus.properties.status.progressPercentage
-                                                    $downloadSizeMB = $imageStatus.properties.status.downloadStatus.downloadSizeInMb
-                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Download progress: $progress% complete" -ForegroundColor Cyan
-                                                    if ($downloadSizeMB) {
-                                                        Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Download size: $downloadSizeMB MB" -ForegroundColor Cyan
-                                                    }
+                                                # Try to calculate total size from progress percentage
+                                                if ($downloadSizeMB -and $progressPercent -gt 0) {
+                                                    $estimatedTotalMB = [math]::Round($downloadSizeMB / ($progressPercent / 100), 0)
+                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Download progress: $progressPercent% complete" -ForegroundColor Cyan
+                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Downloaded: $downloadSizeMB MB of ~$estimatedTotalMB MB" -ForegroundColor Cyan
                                                 }
-                                                
-                                                if ($provisioningState -eq "Succeeded") {
-                                                    $imageReady = $true
-                                                    Write-Log "Image download completed successfully" -Level Success
-                                                }
-                                                elseif ($provisioningState -eq "Failed") {
-                                                    Write-Log "Image download failed. Check Azure portal for error details." -Level Error
-                                                    if ($imageStatus.properties.status.errorMessage) {
-                                                        Write-Log "Error: $($imageStatus.properties.status.errorMessage)" -Level Error
-                                                    }
-                                                    return [PSCustomObject]@{
-                                                        ImageExists = $false
-                                                        ImageName = $imageName
-                                                        Downloaded = $false
-                                                    }
+                                                elseif ($downloadSizeMB) {
+                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Download progress: $progressPercent% complete" -ForegroundColor Cyan
+                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Downloaded: $downloadSizeMB MB" -ForegroundColor Cyan
                                                 }
                                                 else {
-                                                    if ($retryCount % 6 -eq 0) {  # Log every minute
-                                                        Write-Log "Image provisioning state: $provisioningState (elapsed: $($retryCount * 10)s)" -Level Info
-                                                    }
+                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Download progress: $progressPercent% complete" -ForegroundColor Cyan
                                                 }
+                                            }
+                                            
+                                            if ($detailedStatus -eq "Succeeded") {
+                                                $imageReady = $true
+                                                Write-Log "Image download completed successfully" -Level Success
+                                            }
+                                            elseif ($detailedStatus -eq "Failed") {
+                                                $errorInfo = $imageStatus.properties.status.errorCode
+                                                Write-Log "Image download failed: $errorInfo" -Level Error
+                                                break
                                             }
                                             else {
-                                                # Fallback to PowerShell cmdlet if Azure CLI fails
-                                                $imageCheck = Get-AzStackHCIVMImage -Name $imageName -ResourceGroupName $ResourceGroup
-                                                if ($imageCheck -and $imageCheck.ProvisioningState -eq "Succeeded") {
-                                                    $imageReady = $true
-                                                    Write-Log "Image download completed successfully" -Level Success
-                                                }
-                                                elseif ($imageCheck -and $imageCheck.ProvisioningState -eq "Failed") {
-                                                    Write-Log "Image download failed. Check Azure portal for error details." -Level Error
-                                                    return [PSCustomObject]@{
-                                                        ImageExists = $false
-                                                        ImageName = $imageName
-                                                        Downloaded = $false
-                                                    }
+                                                if ($retryCount % 6 -eq 0) {  # Log status every minute
+                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Status: $detailedStatus (elapsed: $($retryCount * 10)s)" -ForegroundColor Cyan
                                                 }
                                             }
                                         }
-                                        catch {
-                                            # Silently continue on errors during polling
+                                        elseif ($provisioningState -eq "Succeeded") {
+                                            $imageReady = $true
+                                            Write-Log "Image provisioned successfully" -Level Success
+                                        }
+                                        elseif ($provisioningState -eq "Failed") {
+                                            Write-Log "Image provisioning failed" -Level Error
+                                            break
+                                        }
+                                        else {
                                             if ($retryCount % 6 -eq 0) {
-                                                Write-Log "Waiting for image to be available... (elapsed: $($retryCount * 10)s)" -Level Info
+                                                Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Provisioning state: $provisioningState (elapsed: $($retryCount * 10)s)" -ForegroundColor Cyan
                                             }
                                         }
-                                    }
-                                    
-                                    if ($imageReady) {
-                                        return [PSCustomObject]@{
-                                            ImageExists = $true
-                                            ImageName = $imageName
-                                            Downloaded = $true
+                                        
+                                        # Check if job completed (success or failure)
+                                        if ($job.State -eq "Completed" -or $job.State -eq "Failed") {
+                                            $jobResult = Receive-Job -Job $job
+                                            if ($job.State -eq "Failed" -or $jobResult.ExitCode -ne 0) {
+                                                Write-Log "Azure CLI job completed with errors" -Level Warning
+                                                if ($jobResult.Output) {
+                                                    Write-Log "Azure CLI output: $($jobResult.Output)" -Level Warning
+                                                }
+                                            }
+                                            Remove-Job -Job $job -Force
                                         }
                                     }
-                                    else {
-                                        Write-Log "Image download did not complete within 20 minutes." -Level Warning
-                                        Write-Log "The download may still be in progress. Check Azure portal for status." -Level Info
-                                        return [PSCustomObject]@{
-                                            ImageExists = $false
-                                            ImageName = $imageName
-                                            Downloaded = $false
+                                    catch {
+                                        # Image might not exist yet, continue waiting
+                                        if ($retryCount % 6 -eq 0) {
+                                            Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Waiting for image resource to be created... (elapsed: $($retryCount * 10)s)" -ForegroundColor Cyan
                                         }
                                     }
                                 }
+                                
+                                # Clean up job if still running
+                                if ($job.State -eq "Running") {
+                                    Write-Log "Stopping Azure CLI background job..." -Level Info
+                                    Stop-Job -Job $job
+                                    Remove-Job -Job $job -Force
+                                }
+                                
+                                if ($imageReady) {
+                                    return [PSCustomObject]@{
+                                        ImageExists = $true
+                                        ImageName = $imageName
+                                        Downloaded = $true
+                                    }
+                                }
                                 else {
-                                    Write-Log "Azure CLI command failed with exit code $LASTEXITCODE" -Level Error
-                                    Write-Log "Output: $azOutput" -Level Error
-                                    Write-Log "Falling back to REST API method..." -Level Warning
-                                    $azCliAvailable = $false  # Force fallback to REST API
+                                    Write-Log "Image download did not complete within 20 minutes" -Level Warning
+                                    Write-Log "The download may still be in progress. Check Azure portal for status." -Level Info
+                                    return [PSCustomObject]@{
+                                        ImageExists = $false
+                                        ImageName = $imageName
+                                        Downloaded = $false
+                                    }
                                 }
                             }
                             catch {
                                 Write-Log "Azure CLI method failed: $_" -Level Error
                                 Write-Log "Falling back to REST API method..." -Level Warning
-                                $azCliAvailable = $false  # Force fallback to REST API
+                                $azCliAuthenticated = $false  # Force fallback to REST API
                             }
                         }
                         
