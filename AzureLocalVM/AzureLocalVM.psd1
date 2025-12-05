@@ -1,5 +1,5 @@
 @{
-    ModuleVersion = '0.1.5'
+    ModuleVersion = '0.1.6'
     GUID = 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
     Author = 'Neil Bird, Azure Edge Infra team'
     CompanyName = 'Microsoft'

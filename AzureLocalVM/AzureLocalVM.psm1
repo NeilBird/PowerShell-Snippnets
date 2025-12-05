@@ -2,9 +2,9 @@
 <#
 .SYNOPSIS
     Author:     Neil Bird, MSFT
-    Version:    0.1.5
+    Version:    0.1.6
     Created:    December 1st 2025
-    Updated:    December 4th 2025
+    Updated:    December 5th 2025
 
 .DESCRIPTION
     PowerShell module for managing Azure Local VMs, networks, and shared storage.
@@ -746,11 +746,79 @@ function Test-AzureLocalVMImage {
                         
                         # Check if Azure CLI is available (preferred method per Microsoft documentation)
                         $azCliAvailable = $false
+                        $azCliAuthenticated = $false
                         try {
                             $azVersion = az version 2>$null | ConvertFrom-Json
                             if ($azVersion.'azure-cli') {
                                 $azCliAvailable = $true
                                 Write-Log "Azure CLI version $($azVersion.'azure-cli') detected" -Level Info
+                                
+                                # Verify Azure CLI authentication
+                                try {
+                                    $accountInfo = az account show 2>$null | ConvertFrom-Json
+                                    if ($accountInfo -and $accountInfo.id) {
+                                        $azCliAuthenticated = $true
+                                        Write-Log "Azure CLI authenticated with subscription: $($accountInfo.name) ($($accountInfo.id))" -Level Info
+                                    }
+                                    else {
+                                        Write-Log "Azure CLI is installed but not authenticated." -Level Warning
+                                        Write-Host "Would you like to authenticate now using device code login? (Y/N): " -NoNewline -ForegroundColor Yellow
+                                        $loginResponse = Read-Host
+                                        
+                                        if ($loginResponse -eq 'Y' -or $loginResponse -eq 'y') {
+                                            Write-Log "Initiating Azure CLI device code login..." -Level Info
+                                            az login --use-device-code
+                                            
+                                            if ($LASTEXITCODE -eq 0) {
+                                                # Verify authentication was successful
+                                                $accountInfo = az account show 2>$null | ConvertFrom-Json
+                                                if ($accountInfo -and $accountInfo.id) {
+                                                    $azCliAuthenticated = $true
+                                                    Write-Log "Azure CLI authentication successful!" -Level Success
+                                                    Write-Log "Authenticated with subscription: $($accountInfo.name) ($($accountInfo.id))" -Level Info
+                                                }
+                                                else {
+                                                    Write-Log "Authentication verification failed. Please try 'az login' manually." -Level Warning
+                                                }
+                                            }
+                                            else {
+                                                Write-Log "Azure CLI login failed. Will use REST API method instead." -Level Warning
+                                            }
+                                        }
+                                        else {
+                                            Write-Log "Azure CLI authentication skipped. Will use REST API method instead." -Level Info
+                                        }
+                                    }
+                                }
+                                catch {
+                                    Write-Log "Azure CLI is installed but not authenticated." -Level Warning
+                                    Write-Host "Would you like to authenticate now using device code login? (Y/N): " -NoNewline -ForegroundColor Yellow
+                                    $loginResponse = Read-Host
+                                    
+                                    if ($loginResponse -eq 'Y' -or $loginResponse -eq 'y') {
+                                        Write-Log "Initiating Azure CLI device code login..." -Level Info
+                                        az login --use-device-code
+                                        
+                                        if ($LASTEXITCODE -eq 0) {
+                                            # Verify authentication was successful
+                                            $accountInfo = az account show 2>$null | ConvertFrom-Json
+                                            if ($accountInfo -and $accountInfo.id) {
+                                                $azCliAuthenticated = $true
+                                                Write-Log "Azure CLI authentication successful!" -Level Success
+                                                Write-Log "Authenticated with subscription: $($accountInfo.name) ($($accountInfo.id))" -Level Info
+                                            }
+                                            else {
+                                                Write-Log "Authentication verification failed. Please try 'az login' manually." -Level Warning
+                                            }
+                                        }
+                                        else {
+                                            Write-Log "Azure CLI login failed. Will use REST API method instead." -Level Warning
+                                        }
+                                    }
+                                    else {
+                                        Write-Log "Azure CLI authentication skipped. Will use REST API method instead." -Level Info
+                                    }
+                                }
                             }
                         }
                         catch {
@@ -758,7 +826,7 @@ function Test-AzureLocalVMImage {
                         }
                         
                         # Method 1: Azure CLI (Recommended)
-                        if ($azCliAvailable) {
+                        if ($azCliAvailable -and $azCliAuthenticated) {
                             Write-Log "Using Azure CLI to download marketplace image (recommended method)..." -Level Info
                             Write-Log "  Publisher: $($selectedImageObj.Publisher)" -Level Info
                             Write-Log "  Offer: $($selectedImageObj.Offer)" -Level Info
@@ -791,6 +859,7 @@ function Test-AzureLocalVMImage {
                                 
                                 if ($LASTEXITCODE -eq 0) {
                                     Write-Log "Azure CLI successfully initiated image download" -Level Success
+                                    Write-Log "Image resource name: $imageName" -Level Info
                                     
                                     # Poll for completion
                                     Write-Log "Monitoring image download progress..." -Level Info
@@ -803,27 +872,67 @@ function Test-AzureLocalVMImage {
                                         $retryCount++
                                         
                                         try {
-                                            $imageCheck = Get-AzStackHCIVMImage -Name $imageName -ResourceGroupName $ResourceGroup -ErrorAction SilentlyContinue
-                                            if ($imageCheck -and $imageCheck.ProvisioningState -eq "Succeeded") {
-                                                $imageReady = $true
-                                                Write-Log "Image download completed successfully" -Level Success
-                                            }
-                                            elseif ($imageCheck -and $imageCheck.ProvisioningState -eq "Failed") {
-                                                Write-Log "Image download failed. Check Azure portal for error details." -Level Error
-                                                return [PSCustomObject]@{
-                                                    ImageExists = $false
-                                                    ImageName = $imageName
-                                                    Downloaded = $false
+                                            # Use Azure CLI to show current status with detailed output
+                                            $showCommand = "az stack-hci-vm image show --name `"$imageName`" --resource-group `"$ResourceGroup`" --subscription `"$SubscriptionId`" --output json 2>&1"
+                                            $imageStatusJson = & cmd /c $showCommand
+                                            
+                                            if ($LASTEXITCODE -eq 0) {
+                                                $imageStatus = $imageStatusJson | ConvertFrom-Json
+                                                $provisioningState = $imageStatus.provisioningState
+                                                
+                                                # Display progress information if available
+                                                if ($imageStatus.properties.status.progressPercentage) {
+                                                    $progress = $imageStatus.properties.status.progressPercentage
+                                                    $downloadSizeMB = $imageStatus.properties.status.downloadStatus.downloadSizeInMb
+                                                    Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Download progress: $progress% complete" -ForegroundColor Cyan
+                                                    if ($downloadSizeMB) {
+                                                        Write-Host "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] [Info] Download size: $downloadSizeMB MB" -ForegroundColor Cyan
+                                                    }
+                                                }
+                                                
+                                                if ($provisioningState -eq "Succeeded") {
+                                                    $imageReady = $true
+                                                    Write-Log "Image download completed successfully" -Level Success
+                                                }
+                                                elseif ($provisioningState -eq "Failed") {
+                                                    Write-Log "Image download failed. Check Azure portal for error details." -Level Error
+                                                    if ($imageStatus.properties.status.errorMessage) {
+                                                        Write-Log "Error: $($imageStatus.properties.status.errorMessage)" -Level Error
+                                                    }
+                                                    return [PSCustomObject]@{
+                                                        ImageExists = $false
+                                                        ImageName = $imageName
+                                                        Downloaded = $false
+                                                    }
+                                                }
+                                                else {
+                                                    if ($retryCount % 6 -eq 0) {  # Log every minute
+                                                        Write-Log "Image provisioning state: $provisioningState (elapsed: $($retryCount * 10)s)" -Level Info
+                                                    }
                                                 }
                                             }
                                             else {
-                                                if ($retryCount % 6 -eq 0) {  # Log every minute
-                                                    Write-Log "Image download in progress... (elapsed: $($retryCount * 10)s)" -Level Info
+                                                # Fallback to PowerShell cmdlet if Azure CLI fails
+                                                $imageCheck = Get-AzStackHCIVMImage -Name $imageName -ResourceGroupName $ResourceGroup
+                                                if ($imageCheck -and $imageCheck.ProvisioningState -eq "Succeeded") {
+                                                    $imageReady = $true
+                                                    Write-Log "Image download completed successfully" -Level Success
+                                                }
+                                                elseif ($imageCheck -and $imageCheck.ProvisioningState -eq "Failed") {
+                                                    Write-Log "Image download failed. Check Azure portal for error details." -Level Error
+                                                    return [PSCustomObject]@{
+                                                        ImageExists = $false
+                                                        ImageName = $imageName
+                                                        Downloaded = $false
+                                                    }
                                                 }
                                             }
                                         }
                                         catch {
-                                            Write-Log "Error checking image status: $_" -Level Warning
+                                            # Silently continue on errors during polling
+                                            if ($retryCount % 6 -eq 0) {
+                                                Write-Log "Waiting for image to be available... (elapsed: $($retryCount * 10)s)" -Level Info
+                                            }
                                         }
                                     }
                                     

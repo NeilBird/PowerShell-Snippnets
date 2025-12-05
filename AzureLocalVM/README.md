@@ -33,6 +33,47 @@ Connect-AzAccount
 Get-AzContext
 ```
 
+### Azure CLI (Optional but Recommended)
+
+Azure CLI is **optional but strongly recommended** for downloading marketplace images. The module will automatically detect and use Azure CLI if available, providing more reliable downloads.
+
+**Installing Azure CLI:**
+
+```powershell
+# Install Azure CLI on Windows
+winget install -e --id Microsoft.AzureCLI
+
+# Or download from: https://learn.microsoft.com/cli/azure/install-azure-cli
+```
+
+**Azure CLI Authentication:**
+
+If Azure CLI is installed but not authenticated, the module will prompt you to authenticate:
+
+```text
+[Info] Azure CLI version 2.x.x detected
+[Warning] Azure CLI is installed but not authenticated.
+Would you like to authenticate now using device code login? (Y/N): Y
+[Info] Initiating Azure CLI device code login...
+To sign in, use a web browser to open the page https://microsoft.com/devicelogin 
+and enter the code XXXXXXXXX to authenticate.
+[Success] Azure CLI authentication successful!
+[Info] Authenticated with subscription: My Subscription (12345-...)
+```
+
+You can also authenticate manually before running the module:
+
+```powershell
+# Authenticate with Azure CLI using device code (recommended for remote sessions)
+az login --use-device-code
+
+# Or use interactive browser login
+az login
+
+# Verify authentication
+az account show
+```
+
 ## Example end to end commands
 
 For a complete end-to-end workflow demonstrating VM creation with Key Vault secrets, shared disks, and data disk management, see the [SharedDisks-Test-Workflows.ps1](SharedDisks-Test-Workflows.ps1) script.
@@ -157,24 +198,39 @@ New-AzureLocalVM `
     -AdminPassword $adminPassword
 ```
 
-**Note:** If the specified VM image doesn't exist, you'll be prompted to download it from Azure Marketplace:
+**Note:** If the specified VM image doesn't exist, you'll be prompted to download it from Azure Marketplace. The module will automatically use Azure CLI for reliable downloads if available:
 
 ```text
-[2025-12-03 ...] [Warning] VM image not found: Windows Server 2022 Datacenter: Azure Edition
-[2025-12-03 ...] [Info] Available images in resource group:
-[2025-12-03 ...] [Info]   [1] Ubuntu Server 20.04 LTS
+[2025-12-05 ...] [Warning] VM image not found: Windows Server 2022 Datacenter: Azure Edition
+[2025-12-05 ...] [Info] Available images in resource group:
+[2025-12-05 ...] [Info]   [1] Ubuntu Server 20.04 LTS
 Would you like to download an image from Azure Marketplace? (Y/N): Y
-[2025-12-03 ...] [Info] Available marketplace images:
-[2025-12-03 ...] [Info]   [1] Windows Server 2022 Datacenter: Azure Edition
-[2025-12-03 ...] [Info]   [2] Windows Server 2022 Datacenter: Azure Edition Hotpatch - Gen2
-[2025-12-03 ...] [Info]   [3] Windows Server 2019 Datacenter
-[2025-12-03 ...] [Info]   [4] Ubuntu Server 22.04 LTS
-[2025-12-03 ...] [Info]   [5] Ubuntu Server 20.04 LTS
-[2025-12-03 ...] [Info]   [0] Cancel
+[2025-12-05 ...] [Info] Azure CLI version 2.x.x detected
+[2025-12-05 ...] [Info] Azure CLI authenticated with subscription: My Subscription (12345-...)
+[2025-12-05 ...] [Info] Using Azure CLI to download marketplace image (recommended method)...
+[2025-12-05 ...] [Info] Available marketplace images:
+[2025-12-05 ...] [Info]   [1] Windows Server 2022 Datacenter: Azure Edition
+[2025-12-05 ...] [Info]   [2] Windows Server 2022 Datacenter: Azure Edition Hotpatch - Gen2
+[2025-12-05 ...] [Info]   [3] Windows Server 2019 Datacenter
+[2025-12-05 ...] [Info]   [4] Ubuntu Server 22.04 LTS
+[2025-12-05 ...] [Info]   [5] Ubuntu Server 20.04 LTS
+[2025-12-05 ...] [Info]   [0] Cancel
 Select an image to download (enter number): 1
-[2025-12-03 ...] [Info] Downloading image: Windows Server 2022 Datacenter: Azure Edition
-[2025-12-03 ...] [Success] Successfully initiated image download
+[2025-12-05 ...] [Info] Selected image: Windows Server 2022 Datacenter: Azure Edition
+[2025-12-05 ...] [Info] Executing Azure CLI command...
+[2025-12-05 ...] [Info] Initiating marketplace image download. This process may take 10-20 minutes...
+[2025-12-05 ...] [Success] Azure CLI successfully initiated image download
+[2025-12-05 ...] [Info] Image resource name: 2022-datacenter-azure-edition
+[2025-12-05 ...] [Info] Monitoring image download progress...
+[2025-12-05 ...] [Info] Download progress: 15% complete
+[2025-12-05 ...] [Info] Download size: 12500 MB
+[2025-12-05 ...] [Info] Download progress: 45% complete
+[2025-12-05 ...] [Info] Download progress: 78% complete
+[2025-12-05 ...] [Info] Download progress: 100% complete
+[2025-12-05 ...] [Success] Image download completed successfully
 ```
+
+If Azure CLI is not installed or not authenticated, the module will fall back to REST API (with known limitations).
 
 #### Using Azure Key Vault Secret
 
@@ -332,7 +388,7 @@ Remove-AzureLocalVM `
 
 - PowerShell 5.1 or later
 - Az PowerShell modules: Az.StackHCIVM, Az.CustomLocation, Az.Accounts, Az.KeyVault (authenticated with `Connect-AzAccount`)
-- **Optional but recommended:** Azure CLI for reliable marketplace image downloads
+- **Azure CLI (strongly recommended):** For reliable marketplace image downloads with real-time progress monitoring. Install with `winget install -e --id Microsoft.AzureCLI` or from [Microsoft Learn](https://learn.microsoft.com/cli/azure/install-azure-cli)
 - Appropriate Azure permissions within the Subscription
 - Appropriate permissions to the Azure Local cluster / nodes
 
@@ -340,7 +396,13 @@ Remove-AzureLocalVM `
 
 - **VM Naming:** VM names cannot contain underscores. Use hyphens instead (e.g., `TestVM-01` not `TestVM_01`)
 - **vNIC Creation:** Virtual network interfaces are now created automatically during VM creation
-- **Marketplace Images:** If Azure CLI is installed, it will be used for more reliable marketplace image downloads. Otherwise, REST API is used as a fallback
+- **Azure CLI Authentication:** When downloading marketplace images, if Azure CLI is installed but not authenticated, you'll be prompted to authenticate using device code login
+- **Marketplace Images:** Azure CLI is strongly recommended for marketplace image downloads as it provides:
+  - More reliable downloads with better error handling
+  - Real-time progress monitoring (percentage and download size)
+  - Automatic retry logic
+  - Better handling of authentication and SAS tokens
+- **REST API Fallback:** If Azure CLI is not available, the module uses REST API, which has known limitations with SAS token generation for some marketplace images
 - **Shared Disks:** VHD Sets are automatically attached to the correct cluster node where each VM is running
 
 ## Author
