@@ -2099,17 +2099,30 @@ function New-HyperVVHDSet {
 
                 # Create the VHD Set (the .vhds extension determines it's a VHD Set)
                 if ($VHDType -eq "Fixed") {
-                    New-VHD -Path $vhdSetPath -SizeBytes $VHDSizeBytes -Fixed -BlockSizeBytes $BlockSizeBytes | Out-Null
+                    try {
+                        New-VHD -Path $vhdSetPath -SizeBytes $VHDSizeBytes -Fixed -BlockSizeBytes $BlockSizeBytes | Out-Null
+                    } catch {
+                        Write-Log "Error creating Fixed VHD Set: $_" -Level Error
+                    }
                 } else {
-                    New-VHD -Path $vhdSetPath -SizeBytes $VHDSizeBytes -Dynamic -BlockSizeBytes $BlockSizeBytes | Out-Null
+                    try {
+                        New-VHD -Path $vhdSetPath -SizeBytes $VHDSizeBytes -Dynamic -BlockSizeBytes $BlockSizeBytes | Out-Null
+                    } catch {
+                        Write-Log "Error creating Dynamic VHD Set: $_" -Level Error
+                    }
                 }
 
+                # Ensure VHD Set was created, then return path, throw error if not
                 if (Test-Path $vhdSetPath) {
+                    # Success
                     Write-Log "Successfully created VHD Set: $vhdSetPath" -Level Success
                     return $vhdSetPath
                 } else {
+                    # Failure
+                    Write-Log "VHD Set creation failed: $vhdSetPath" -Level Error
                     throw "VHD Set was not created"
                 }
+
             } else {
                 # Execute remotely
                 $targetNode = $clusterNodes[0].Name
