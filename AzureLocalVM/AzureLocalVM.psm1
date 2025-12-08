@@ -1554,6 +1554,9 @@ function New-AzureLocalVNIC {
     The full Azure Key Vault secret ID (e.g., https://myvault.vault.azure.net/secrets/vmadminpassword/version).
     Either AdminPassword or KeyVaultSecretId must be provided.
 
+.PARAMETER ProvisionVMConfigAgent
+    Whether to provision the VM Config Agent on the VM. Default is $true. Set to $false to skip agent provisioning.
+
 .OUTPUTS
     Boolean indicating success or failure.
 
@@ -1593,7 +1596,10 @@ function New-AzureLocalVM {
         
         [Parameter(Mandatory = $true, ParameterSetName = 'KeyVault')]
         [ValidatePattern('^https://[a-zA-Z0-9-]+\.vault\.azure\.net/secrets/[a-zA-Z0-9-]+(/[a-zA-Z0-9-]+)?$')]
-        [string]$KeyVaultSecretId
+        [string]$KeyVaultSecretId,
+        
+        [Parameter(Mandatory = $false)]
+        [bool]$ProvisionVMConfigAgent = $true
     )
 
     # Check prerequisites
@@ -1792,18 +1798,34 @@ function New-AzureLocalVM {
                 Write-Log "VM Parameters: Name=$VMName, RG=$ResourceGroup, Location=$location, OsType=$osType, Image=$VMImage, Size=$VMSize, User=$AdminUsername, Computer=$VMName, Password=<length:$($adminPlainPassword.Length)>, NicId=$nicId" -Level Info
 
                 # Call cmdlet directly with parameters (not using hashtable splatting)
-                $vm = New-AzStackHCIVMVirtualMachine `
-                    -Name $VMName `
-                    -ResourceGroupName $ResourceGroup `
-                    -CustomLocationId $CustomLocationId `
-                    -Location $location `
-                    -OsType $osType `
-                    -ImageName $VMImage `
-                    -VmSize $VMSize `
-                    -AdminUsername $AdminUsername `
-                    -AdminPassword $adminPlainPassword `
-                    -ComputerName $VMName `
-                    -NicId $nicId
+                if ($ProvisionVMConfigAgent) {
+                    $vm = New-AzStackHCIVMVirtualMachine `
+                        -Name $VMName `
+                        -ResourceGroupName $ResourceGroup `
+                        -CustomLocationId $CustomLocationId `
+                        -Location $location `
+                        -OsType $osType `
+                        -ImageName $VMImage `
+                        -VmSize $VMSize `
+                        -AdminUsername $AdminUsername `
+                        -AdminPassword $adminPlainPassword `
+                        -ComputerName $VMName `
+                        -NicId $nicId `
+                        -ProvisionVMConfigAgent
+                } else {
+                    $vm = New-AzStackHCIVMVirtualMachine `
+                        -Name $VMName `
+                        -ResourceGroupName $ResourceGroup `
+                        -CustomLocationId $CustomLocationId `
+                        -Location $location `
+                        -OsType $osType `
+                        -ImageName $VMImage `
+                        -VmSize $VMSize `
+                        -AdminUsername $AdminUsername `
+                        -AdminPassword $adminPlainPassword `
+                        -ComputerName $VMName `
+                        -NicId $nicId
+                }
             }
             finally {
                 # Clear plain text password from memory

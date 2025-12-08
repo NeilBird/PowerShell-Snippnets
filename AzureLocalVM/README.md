@@ -195,7 +195,8 @@ New-AzureLocalVM `
     -VMSize "Standard_D2s_v3" `
     -VMImage "Windows Server 2022 Datacenter: Azure Edition" `
     -AdminUsername "admin" `
-    -AdminPassword $adminPassword
+    -AdminPassword $adminPassword `
+    -ProvisionVMConfigAgent $true
 ```
 
 **Note:** If the specified VM image doesn't exist, you'll be prompted to download it from Azure Marketplace. The module will automatically use Azure CLI for reliable downloads if available:
@@ -250,6 +251,24 @@ New-AzureLocalVM `
     -VMImage "Windows Server 2022 Datacenter: Azure Edition" `
     -AdminUsername "admin" `
     -KeyVaultSecretId "https://myKeyVault.vault.azure.net/secrets/vmadminpassword"
+```
+
+**Optional Parameters:**
+
+- **`-ProvisionVMConfigAgent`**: Controls whether the VM Config Agent is provisioned on the VM. Default is `$true`. Set to `$false` to skip agent provisioning:
+
+```powershell
+New-AzureLocalVM `
+    -VMName "myVM01" `
+    -SubscriptionId "12345-..." `
+    -ResourceGroup "myRG" `
+    -CustomLocationId "/subscriptions/.../customLocations/..." `
+    -NicName "myVM01-nic" `
+    -VMSize "Standard_D2s_v3" `
+    -VMImage "Windows Server 2022 Datacenter: Azure Edition" `
+    -AdminUsername "admin" `
+    -KeyVaultSecretId "https://myKeyVault.vault.azure.net/secrets/vmadminpassword" `
+    -ProvisionVMConfigAgent $false
 ```
 
 ### Create Shared VHD Set
