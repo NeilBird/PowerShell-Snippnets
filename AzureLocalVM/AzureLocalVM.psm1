@@ -4,7 +4,7 @@
     Author:     Neil Bird, MSFT
     Version:    0.1.6
     Created:    December 1st 2025
-    Updated:    December 5th 2025
+    Updated:    December 8th 2025
 
 .DESCRIPTION
     PowerShell module for managing Azure Local VMs, networks, and shared storage.
@@ -878,7 +878,7 @@ function Test-AzureLocalVMImage {
                                     "--subscription `"$SubscriptionId`""
                                 
                                 Write-Log "Starting Azure CLI download as background job..." -Level Info
-                                Write-Log "Initiating marketplace image download. This process may take 10-30 minutes depending on download speed..." -Level Info
+                                Write-Log "Initiating marketplace image download. This process may take approx. 10 to 30 minutes, depending on VM image size and your cluster download speed..." -Level Info
                                 Write-Host ""
                                 
                                 # Start Azure CLI command as a background job
