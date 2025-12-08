@@ -2054,7 +2054,21 @@ function New-HyperVVHDSet {
                 $ClusterSharedVolume = $csvInfo.LocalPath
                 
                 Write-Log "Selected CSV: $($csvInfo.Name) with $($csvInfo.FreeSpaceGB) GB free" -Level Success
+                # Add "VHDs" folder to the path
+                $ClusterSharedVolume = Join-Path -Path $ClusterSharedVolume -ChildPath "VHDs"
                 Write-Log "Using path: $ClusterSharedVolume" -Level Info
+                # Check if the directory exists, create if not
+                if (-not (Test-Path $ClusterSharedVolume)) {
+                    Write-Log "Creating VHDs directory: $ClusterSharedVolume" -Level Info
+                    try {
+                        New-Item -Path $ClusterSharedVolume -ItemType Directory -Force | Out-Null
+                        Write-Log "Successfully created 'VHDs' directory: $ClusterSharedVolume" -Level Success
+                    } catch {
+                        Write-Log "Error creating VHDs directory: $_" -Level Error
+                    }
+                }
+            } else {
+                Write-Log "Using specified CSV path: $ClusterSharedVolume" -Level Info
             }
 
             # Convert GB to Bytes
