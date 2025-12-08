@@ -1521,7 +1521,9 @@ function New-AzureLocalVNIC {
 
 <#
 .SYNOPSIS
-    Creates an Azure Local virtual machine.
+    Creates an Azure Local virtual machine. Wrapper for New-AzStackHCIVMVirtualMachine, but includes 
+    commands to create a new vNIC and download VM images Azure marketplace is required.
+    https://learn.microsoft.com/en-us/powershell/module/az.stackhcivm/new-azstackhcivmvirtualmachine
 
 .PARAMETER VMName
     The name of the VM to create.
