@@ -1795,7 +1795,7 @@ function New-AzureLocalVM {
                 $location = (Get-AzResourceGroup -Name $ResourceGroup).Location
                 
                 # Log parameters (excluding password value)
-                Write-Log "VM Parameters: Name=$VMName, RG=$ResourceGroup, Location=$location, OsType=$osType, Image=$VMImage, Size=$VMSize, User=$AdminUsername, Computer=$VMName, Password=<length:$($adminPlainPassword.Length)>, NicId=$nicId" -Level Info
+                Write-Log "VM Parameters: Name=$VMName, RG=$ResourceGroup, CustomLocationId=$CustomLocationId, Location=$location, OsType=$osType, Image=$VMImage, Size=$VMSize, User=$AdminUsername, Computer=$VMName, Password=<length:$($adminPlainPassword.Length)>, NicId=$nicId, ProvisionVMConfigAgent=$ProvisionVMConfigAgent" -Level Info
 
                 # Call cmdlet directly with parameters (not using hashtable splatting)
                 if ($ProvisionVMConfigAgent) {
