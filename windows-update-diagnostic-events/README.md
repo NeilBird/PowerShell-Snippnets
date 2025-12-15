@@ -183,10 +183,11 @@ Ensure you're running the script from a cluster node or specify `-ClusterName` e
 ## Author
 
 **Neil Bird**  
-Generated with assistance from Claude Sonnet 4.5  
 Date: December 15, 2025
 
 ## License
+
+Published using [MIT License](https://github.com/NeilBird/PowerShell-Snippnets/tree/main?tab=MIT-1-ov-file#readme)
 
 THIS CODE-SAMPLE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
