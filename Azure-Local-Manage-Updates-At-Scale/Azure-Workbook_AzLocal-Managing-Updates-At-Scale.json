@@ -1,0 +1,2645 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "sub-param-001",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscriptions",
+            "type": 6,
+            "isRequired": false,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "includeAll": true,
+              "showDefault": false
+            },
+            "defaultValue": "value::all",
+            "value": [
+              "value::all"
+            ],
+            "label": "Subscriptions"
+          },
+          {
+            "id": "time-range-001",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "value": {
+              "durationMs": 604800000
+            },
+            "label": "Time Range"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "global-subscription-param"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "### ⚠️ Quick Actions\r\n[Create Azure Monitor Alert Rule](https://portal.azure.com/#view/Microsoft_Azure_Monitoring/AzureMonitoringBrowseBlade/~/alertsV2) | [View Activity Log](https://portal.azure.com/#view/Microsoft_Azure_Monitoring/AzureMonitoringBrowseBlade/~/activityLog) | [Azure Advisor Recommendations](https://portal.azure.com/#view/Microsoft_Azure_Expert/AdvisorMenuBlade/~/overview) | [Azure Local Documentation](https://learn.microsoft.com/azure/azure-local/whats-new)\r\n\r\n---"
+      },
+      "name": "quick-actions-global"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "tabStyle": "larger",
+        "links": [
+          {
+            "id": "summary-dashboard-tab",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "📊 Summary Dashboard",
+            "subTarget": "0",
+            "style": "link",
+            "preText": "",
+            "isDefault": true
+          },
+          {
+            "id": "a73ee4cb-fbb6-4d62-a290-18479bfe7958",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "📋 Update Readiness and System Health",
+            "subTarget": "3",
+            "style": "link"
+          },
+          {
+            "id": "d9e5f4a2-0c3f-5678-9012-bcdef2345678",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "🔄 Update Progress",
+            "subTarget": "5",
+            "style": "link"
+          },
+          {
+            "id": "3f29b7be-5489-43f2-beb7-c90c618ad71c",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "🔗 Azure Resource Bridges (ARB) Status",
+            "subTarget": "1",
+            "style": "link"
+          },
+          {
+            "id": "a285a540-ba34-4588-b467-b0b8b21d1494",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "🧩 Physical Node Extensions",
+            "subTarget": "2",
+            "style": "link"
+          },
+          {
+            "id": "c8d4f3a1-9b2e-4567-8901-abcdef123456",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "☸️ AKS Arc Clusters",
+            "subTarget": "4",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "main-tabs"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Summary Dashboard",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "**Last Refreshed:** {TimeRange:label} | Click refresh on any tile to update data"
+            },
+            "name": "last-refreshed-text"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "#### � Visual Summary"
+            },
+            "name": "section-header-charts"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| extend Status = iff(properties.status == \"ConnectedRecently\", \"Connected\", \"Disconnected\")\r\n| summarize Count = count() by Status",
+              "size": 3,
+              "title": "Cluster Connectivity",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Connected",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Disconnected",
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "customWidth": "33",
+            "name": "pie-cluster-connectivity",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend HealthStatus = tostring(properties.healthState)\r\n| extend HealthStatus = case(\r\n    HealthStatus == \"Success\", \"Healthy\",\r\n    HealthStatus == \"Warning\", \"Warning\",\r\n    HealthStatus == \"Failure\", \"Failed\",\r\n    \"Unknown\")\r\n| summarize Count = count() by HealthStatus",
+              "size": 3,
+              "title": "Cluster Health Status",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Healthy",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Warning",
+                    "color": "yellow"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "red"
+                  },
+                  {
+                    "seriesName": "Unknown",
+                    "color": "gray"
+                  }
+                ]
+              }
+            },
+            "customWidth": "33",
+            "name": "pie-cluster-health",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.resourceconnector/appliances\"\r\n| extend Status = tostring(properties.status)\r\n| extend Status = iff(Status == \"Running\", \"Online\", \"Offline\")\r\n| summarize Count = count() by Status",
+              "size": 3,
+              "title": "ARB Status",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Online",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Offline",
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "customWidth": "33",
+            "name": "pie-arb-status",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\r\n#### �🖥️ Azure Local Totals and Connectivity"
+            },
+            "name": "section-header-connectivity"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| summarize TotalClusters = count()\r\n| extend Label = 'Total Clusters'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "TotalClusters",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "blue"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-total-clusters",
+            "title": "Total Clusters",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| where properties.status == \"ConnectedRecently\"\r\n| summarize ConnectedClusters = count()\r\n| extend Label = 'Connected Clusters'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "ConnectedClusters",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "green"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-connected-clusters",
+            "title": "Connected Clusters",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| where properties.status != \"ConnectedRecently\"\r\n| summarize DisconnectedClusters = count()\r\n| extend Label = 'Disconnected Clusters'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "DisconnectedClusters",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "gray"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-disconnected-clusters",
+            "title": "Disconnected Clusters",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| summarize Total = count(), Connected = countif(properties.status == \"ConnectedRecently\")\r\n| extend Percentage = round(todouble(Connected) / todouble(Total) * 100, 1)\r\n| extend Label = '% Connected'\r\n| project Label, Percentage",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Percentage",
+                  "formatter": 18,
+                  "formatOptions": {
+                    "thresholdsOptions": "colors",
+                    "thresholdsGrid": [
+                      {
+                        "operator": ">=",
+                        "thresholdValue": "90",
+                        "representation": "green",
+                        "text": "{0}{1}%"
+                      },
+                      {
+                        "operator": ">=",
+                        "thresholdValue": "70",
+                        "representation": "yellow",
+                        "text": "{0}{1}%"
+                      },
+                      {
+                        "operator": "Default",
+                        "thresholdValue": null,
+                        "representation": "redBright",
+                        "text": "{0}{1}%"
+                      }
+                    ]
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-percent-connected",
+            "title": "% Connected",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| summarize TotalNodes = count()\r\n| extend Label = 'Total Azure Local Nodes'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "TotalNodes",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "magenta"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-total-azure-local-nodes",
+            "title": "Total Azure Local Nodes",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type in (\"microsoft.resourceconnector/appliances\", \"microsoft.azurestackhci/clusters\")\r\n| summarize TotalClusters = countif(type == \"microsoft.azurestackhci/clusters\"), OfflineARB = countif(type == \"microsoft.resourceconnector/appliances\" and properties.status == \"Offline\")\r\n| extend OfflinePercent = iff(TotalClusters == 0, 0.0, round(todouble(OfflineARB) / todouble(TotalClusters) * 100, 1))\r\n| extend Label = 'ARB Offline'\r\n| project Label, OfflineARB, OfflinePercent",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "OfflineARB",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "orange"
+                  }
+                },
+                "secondaryContent": {
+                  "columnMatch": "OfflinePercent",
+                  "formatter": 18,
+                  "formatOptions": {
+                    "thresholdsOptions": "colors",
+                    "thresholdsGrid": [
+                      {
+                        "operator": "==",
+                        "thresholdValue": "0",
+                        "representation": "green",
+                        "text": "{0}{1}%"
+                      },
+                      {
+                        "operator": "<=",
+                        "thresholdValue": "10",
+                        "representation": "yellow",
+                        "text": "{0}{1}%"
+                      },
+                      {
+                        "operator": "Default",
+                        "thresholdValue": null,
+                        "representation": "redBright",
+                        "text": "{0}{1}%"
+                      }
+                    ]
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-arb-offline",
+            "title": "ARB Offline",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "#### 🩺 Azure Local Health and Patching"
+            },
+            "name": "section-header-health"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where properties.healthState == \"Success\"\r\n| summarize HealthyClusters = count()\r\n| extend Label = 'Healthy Clusters'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "HealthyClusters",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "greenDark"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-healthy-clusters",
+            "title": "Healthy Clusters",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where properties.healthState == \"Warning\"\r\n| summarize Warnings = count()\r\n| extend Label = 'Health Warnings'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Warnings",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "yellow"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-warnings",
+            "title": "Health Warnings",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where properties.healthState == \"Failure\"\r\n| summarize FailedPrechecks = count()\r\n| extend Label = 'Failed Prechecks'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "FailedPrechecks",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "red"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-failed-prechecks",
+            "title": "Failed Prechecks",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| project machineName = name, machineResourceGroup = resourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | project clusterResourceGroup = resourceGroup\r\n) on $left.machineResourceGroup == $right.clusterResourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines/extensions\"\r\n    | where properties.provisioningState == \"Failed\"\r\n    | parse id with * \"/machines/\" mName \"/extensions/\" *\r\n    | project mName, resourceGroup\r\n) on $left.machineName == $right.mName and $left.machineResourceGroup == $right.resourceGroup\r\n| summarize FailedExtensions = count()\r\n| extend Label = 'Failed Extensions'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "FailedExtensions",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "redDark"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-failed-extensions",
+            "title": "Failed Extensions",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| summarize Total = count(), Healthy = countif(properties.healthState == \"Success\")\r\n| extend Percentage = round(todouble(Healthy) / todouble(Total) * 100, 1)\r\n| extend Label = '% Healthy'\r\n| project Label, Percentage",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Percentage",
+                  "formatter": 18,
+                  "formatOptions": {
+                    "thresholdsOptions": "colors",
+                    "thresholdsGrid": [
+                      {
+                        "operator": ">=",
+                        "thresholdValue": "90",
+                        "representation": "green",
+                        "text": "{0}{1}%"
+                      },
+                      {
+                        "operator": ">=",
+                        "thresholdValue": "70",
+                        "representation": "yellow",
+                        "text": "{0}{1}%"
+                      },
+                      {
+                        "operator": "Default",
+                        "thresholdValue": null,
+                        "representation": "redBright",
+                        "text": "{0}{1}%"
+                      }
+                    ]
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-percent-healthy",
+            "title": "% Healthy",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "#### 💼 Azure Local Workloads"
+            },
+            "name": "section-header-workloads"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where kind == \"HCI\"\r\n| summarize TotalVMs = count()\r\n| extend Label = 'Total Azure Local VMs'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "TotalVMs",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "purple"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-total-vms",
+            "title": "Total Azure Local VMs",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| summarize TotalAKSArc = count()\r\n| extend Label = 'Total AKS Arc Clusters'",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Label",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "TotalAKSArc",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "turquoise"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "16",
+            "name": "tile-total-aks-arc",
+            "title": "Total AKS Arc Clusters",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "0"
+      },
+      "name": "summary-tiles-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "# ARB Status per Azure Local instance"
+                  },
+                  "name": "text - 2"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources\r\n| where type == \"microsoft.resourceconnector/appliances\"\r\n| extend status = tostring(properties.status)\r\n| project arcbridgename = name, resourceGroup, status\r\n| join kind=leftouter (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n        | extend hcistatus = tostring(properties.status)\r\n    | project hciname = name, resourceGroup, hcistatus\r\n) on resourceGroup\r\n| where hcistatus =~ \"ConnectedRecently\"\r\n| summarize \r\n    TotalResources = count(),\r\n    ArcBridgeCount = dcount(arcbridgename),\r\n    HCIClusterCount = dcount(hciname)\r\n    by ArcBridgeStatus = status, HCIClusterConnectivity = hcistatus\r\n| order by ArcBridgeStatus asc",
+                    "size": 4,
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Subscriptions}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "TotalResources",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "HCIClusterCount",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "ArcBridgeStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Running",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Offline",
+                                "representation": "4",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "warning",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "rowLimit": 10
+                    },
+                    "sortBy": []
+                  },
+                  "customWidth": "50",
+                  "name": "arcbridge-status"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "{\"version\":\"Merge/1.0\",\"merges\":[{\"id\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\",\"mergeType\":\"table\",\"leftTable\":\"arcbridge-status\"}],\"projectRename\":[{\"originalName\":\"[arcbridge-status].ArcBridgeStatus\",\"mergedName\":\"ArcBridgeStatus\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].HCIStatus\",\"mergedName\":\"HCIStatus\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].TotalResources\",\"mergedName\":\"TotalResources\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].ArcBridgeCount\",\"mergedName\":\"ArcBridgeCount\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].HCIClusterCount\",\"mergedName\":\"HCIClusterCount\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].ClusterConnectivityStatus\",\"mergedName\":\"ClusterConnectivityStatus\",\"fromId\":\"unknown\"},{\"originalName\":\"[arcbridge-status].ClusterConnectivity\",\"mergedName\":\"ClusterConnectivity\",\"fromId\":\"unknown\"}]}",
+                    "size": 1,
+                    "queryType": 7,
+                    "visualization": "piechart"
+                  },
+                  "customWidth": "50",
+                  "name": "query - 1"
+                }
+              ]
+            },
+            "customWidth": "100",
+            "conditionalVisibility": {
+              "parameterName": "selectedTab",
+              "comparison": "isEqualTo",
+              "value": "1"
+            },
+            "name": "arcbridge summary",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Offline Azure Resource Bridges (ARB) appliances"
+            },
+            "name": "text - 2 - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.resourceconnector/appliances\"\r\n| where properties.status == \"Offline\"\r\n| extend status = tostring(properties.status)\r\n| project arcbridgename = name, arcbridgeId = id, resourceGroup, status\r\n| join kind=inner  (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where properties.status == \"ConnectedRecently\"\r\n    | extend hcistatus = tostring(properties.status)\r\n    | project hciname = name, clusterId = id, resourceGroup, hcistatus\r\n    | join kind=leftouter (\r\n        ExtensibilityResources\r\n        | where type =~ 'microsoft.azurestackhci/clusters/updateSummaries'\r\n        | extend currentVersion = tostring(properties.currentVersion)\r\n        | extend cId = substring(id, 0, indexof(id, '/updateSummaries/'))\r\n        | project cId, currentVersion\r\n    ) on $left.clusterId == $right.cId\r\n    | join kind=leftouter (\r\n        resources\r\n        | where type == \"microsoft.hybridcompute/machines\"\r\n        | where kind == \"HCI\"\r\n        | summarize VMCount = count() by resourceGroup\r\n    ) on resourceGroup\r\n    | join kind=leftouter (\r\n        resources\r\n        | where type == \"microsoft.kubernetes/connectedclusters\"\r\n        | where properties.infrastructure == \"azure_stack_hci\"\r\n        | summarize AKSArcCount = count() by resourceGroup\r\n    ) on resourceGroup\r\n) on resourceGroup\r\n| extend arbLink = strcat('https://portal.azure.com/#@/resource', arcbridgeId)\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| project ARBResourceName = arcbridgename, arbLink, resourceGroup, ARBStatus = status, ClusterName = hciname, clusterLink, HCIClusterConnectivity = hcistatus, currentVersion, VMCount = coalesce(VMCount, 0), AKSArcCount = coalesce(AKSArcCount, 0)\r\n| order by ARBStatus asc, HCIClusterConnectivity asc",
+              "size": 0,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "arbLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open ARB"
+                    }
+                  },
+                  {
+                    "columnMatch": "ARBStatus",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Running",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Offline",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "warning",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "sortBy": []
+            },
+            "name": "Offline Arcbridges (online Azure Local)"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "# All Azure Resource Bridges (ARB) appliances"
+            },
+            "name": "text - 3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.resourceconnector/appliances\"\r\n| extend status = tostring(properties.status)\r\n| project arcbridgename = name, arcbridgeId = id, resourceGroup, status\r\n| join kind=inner  (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | extend hcistatus = tostring(properties.status)\r\n    | project hciname = name, clusterId = id, resourceGroup, hcistatus\r\n    | join kind=leftouter (\r\n        ExtensibilityResources\r\n        | where type =~ 'microsoft.azurestackhci/clusters/updateSummaries'\r\n        | extend currentVersion = tostring(properties.currentVersion)\r\n        | extend cId = substring(id, 0, indexof(id, '/updateSummaries/'))\r\n        | project cId, currentVersion\r\n    ) on $left.clusterId == $right.cId\r\n    | join kind=leftouter (\r\n        resources\r\n        | where type == \"microsoft.hybridcompute/machines\"\r\n        | where kind == \"HCI\"\r\n        | summarize VMCount = count() by resourceGroup\r\n    ) on resourceGroup\r\n    | join kind=leftouter (\r\n        resources\r\n        | where type == \"microsoft.kubernetes/connectedclusters\"\r\n        | where properties.infrastructure == \"azure_stack_hci\"\r\n        | summarize AKSArcCount = count() by resourceGroup\r\n    ) on resourceGroup\r\n) on resourceGroup\r\n| extend arbLink = strcat('https://portal.azure.com/#@/resource', arcbridgeId)\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| project ARBResourceName = arcbridgename, arbLink, resourceGroup, ARBStatus = status, ClusterName = hciname, clusterLink, ClusterConnectivity = hcistatus, currentVersion, VMCount = coalesce(VMCount, 0), AKSArcCount = coalesce(AKSArcCount, 0)\r\n| order by ClusterConnectivity desc, ARBStatus asc",
+              "size": 0,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "arbLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open ARB"
+                    }
+                  },
+                  {
+                    "columnMatch": "ARBStatus",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Running",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Offline",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "warning",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  },
+                  {
+                    "columnMatch": "ClusterConnectivity",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "ConnectedRecently",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "sortBy": []
+            },
+            "name": "Offline Arcbridges (online Azure Local) - Copy"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "1"
+      },
+      "name": "arcbridge-page"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Azure Local Physical Node Extensions",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "ext-status-filter-001",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "ExtensionStatusFilter",
+                  "label": "Extension Status",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\"Succeeded\", \"Failed\", \"Creating\", \"Updating\", \"Deleting\"]",
+                  "defaultValue": "value::all"
+                },
+                {
+                  "id": "ext-name-filter-001",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "ExtensionNameFilter",
+                  "label": "Extension Name",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines/extensions\"\r\n| parse id with * \"/machines/\" mName \"/extensions/\" extName\r\n| distinct extName\r\n| order by extName asc",
+                  "crossComponentResources": [
+                    "{Subscriptions}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "extensions-filters"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| project machineId = id, machineName = name, machineResourceGroup = resourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | project clusterResourceGroup = resourceGroup\r\n) on $left.machineResourceGroup == $right.clusterResourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines/extensions\"\r\n    | extend status = tostring(properties.provisioningState)\r\n    | extend extensionName = tostring(name)\r\n    | parse id with * \"/machines/\" mName \"/extensions/\" *\r\n    | project extensionName, status, mName, resourceGroup\r\n) on $left.machineName == $right.mName and $left.machineResourceGroup == $right.resourceGroup\r\n| where '*' in ({ExtensionNameFilter}) or extensionName in ({ExtensionNameFilter})\r\n| where '*' in ({ExtensionStatusFilter}) or status in ({ExtensionStatusFilter})\r\n| summarize count() by extensionName, status\r\n| summarize \r\n    Succeeded = sumif(count_, status == \"Succeeded\"),\r\n    Failed = sumif(count_, status == \"Failed\"),\r\n    Creating = sumif(count_, status == \"Creating\"),\r\n    Updating = sumif(count_, status == \"Updating\"),\r\n    Deleting = sumif(count_, status == \"Deleting\"),\r\n    Other = sumif(count_, status !in (\"Succeeded\", \"Failed\", \"Creating\", \"Updating\", \"Deleting\"))\r\n    by extensionName\r\n| project extensionName, Succeeded, Failed, Creating, Updating, Deleting, Other\r\n| order by extensionName asc",
+              "size": 0,
+              "showRefreshButton": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Succeeded",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Failed",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "redBright",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Creating",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Updating",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "yellow",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "customWidth": "60",
+            "name": "query - 3",
+            "styleSettings": {
+              "margin": "5",
+              "padding": "5",
+              "maxWidth": "60"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "{\"version\":\"Merge/1.0\",\"merges\":[{\"id\":\"1acf4240-2e7a-422c-8295-e53c94d43077\",\"mergeType\":\"table\",\"leftTable\":\"query - 3\"}],\"projectRename\":[{\"originalName\":\"[query - 3].extensionName\",\"mergedName\":\"extensionName\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"},{\"originalName\":\"[query - 3].Succeeded\",\"mergedName\":\"Succeeded\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"},{\"originalName\":\"[query - 3].Failed\",\"mergedName\":\"Failed\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"},{\"originalName\":\"[query - 3].Creating\",\"mergedName\":\"Creating\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"},{\"originalName\":\"[query - 3].Updating\",\"mergedName\":\"Updating\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"},{\"originalName\":\"[query - 3].Deleting\",\"mergedName\":\"Deleting\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"},{\"originalName\":\"[query - 3].Other\",\"mergedName\":\"Other\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"},{\"originalName\":\"[query - 3].Total\",\"mergedName\":\"Total\",\"fromId\":\"1acf4240-2e7a-422c-8295-e53c94d43077\"}]}",
+              "size": 0,
+              "queryType": 7,
+              "visualization": "categoricalbar",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Total",
+                    "formatter": 5
+                  }
+                ]
+              },
+              "graphSettings": {
+                "type": 0,
+                "topContent": {
+                  "columnMatch": "extensionName",
+                  "formatter": 1
+                },
+                "centerContent": {
+                  "columnMatch": "Succeeded",
+                  "formatter": 1,
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "chartSettings": {
+                "xSettings": {
+                  "label": "Extension"
+                },
+                "ySettings": {
+                  "label": "Count"
+                }
+              }
+            },
+            "customWidth": "40",
+            "showPin": false,
+            "name": "query - 1",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px",
+              "maxWidth": "40"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| project machineId = id, machineName = name, machineResourceGroup = resourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | project clusterName = name, clusterResourceGroup = resourceGroup, clusterId = id\r\n    | join kind=leftouter (\r\n        ExtensibilityResources\r\n        | where type =~ 'microsoft.azurestackhci/clusters/updateSummaries'\r\n        | extend cId = substring(id, 0, indexof(id, '/updateSummaries/'))\r\n        | project cId, currentVersion = tostring(properties.currentVersion)\r\n    ) on $left.clusterId == $right.cId\r\n) on $left.machineResourceGroup == $right.clusterResourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines/extensions\"\r\n    | extend status = properties.provisioningState\r\n    | where status == \"Failed\"\r\n    | extend message = properties.instanceView.status.message\r\n    | parse id with * \"/machines/\" mName \"/extensions/\" extensionName\r\n    | project extensionName, status, message, mName, resourceGroup, subscriptionId\r\n) on $left.machineName == $right.mName and $left.machineResourceGroup == $right.resourceGroup\r\n| extend machineLink = strcat('https://portal.azure.com/#@/resource', machineId)\r\n| project clusterName, machineName, machineLink, extensionName, status, message, currentVersion, resourceGroup = machineResourceGroup, subscriptionId\r\n| order by clusterName asc, machineName asc",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "All Failed Physical Node Extensions",
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "machineLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Machine"
+                    }
+                  },
+                  {
+                    "columnMatch": "status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failed",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "message",
+                    "formatter": 1
+                  }
+                ],
+                "rowLimit": 1000,
+                "filter": true
+              }
+            },
+            "name": "all-failed-extensions"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "2"
+      },
+      "name": "extensions"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "AKS Arc Clusters",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "# AKS Arc Clusters on Azure Stack HCI"
+            },
+            "name": "text-aks-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| extend connectivityStatus = tostring(properties.connectivityStatus)\r\n| summarize \r\n    Connected = countif(connectivityStatus == \"Connected\"),\r\n    Disconnected = countif(connectivityStatus != \"Connected\"),\r\n    Total = count()",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Total",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "blue"
+                  }
+                },
+                "secondaryContent": {
+                  "columnMatch": "Connected",
+                  "formatter": 1,
+                  "formatOptions": {
+                    "palette": "green"
+                  }
+                },
+                "showBorder": true
+              }
+            },
+            "customWidth": "25",
+            "name": "aks-summary-tile",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| extend connectivityStatus = tostring(properties.connectivityStatus)\r\n| summarize Count = count() by connectivityStatus\r\n| order by Count desc",
+              "size": 0,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Connected",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Disconnected",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "25",
+            "name": "aks-connectivity-chart",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| extend kubernetesVersion = tostring(properties.kubernetesVersion)\r\n| summarize ClusterCount = count() by kubernetesVersion\r\n| order by ClusterCount desc",
+              "size": 0,
+              "title": "Kubernetes Version Distribution",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart"
+            },
+            "customWidth": "25",
+            "name": "aks-version-distribution",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| extend provisioningState = tostring(properties.provisioningState)\r\n| summarize Count = count() by provisioningState\r\n| order by Count desc",
+              "size": 0,
+              "title": "Provisioning State",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "Creating",
+                    "color": "blue"
+                  }
+                ]
+              }
+            },
+            "customWidth": "25",
+            "name": "aks-provisioning-state",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## All AKS Arc Clusters"
+            },
+            "name": "text-aks-all"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| extend connectivityStatus = tostring(properties.connectivityStatus)\r\n| extend provisioningState = tostring(properties.provisioningState)\r\n| extend kubernetesVersion = tostring(properties.kubernetesVersion)\r\n| extend agentVersion = tostring(properties.agentVersion)\r\n| extend totalNodeCount = toint(properties.totalNodeCount)\r\n| extend totalCoreCount = toint(properties.totalCoreCount)\r\n| extend lastConnectivityTime = todatetime(properties.lastConnectivityTime)\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', id)\r\n| project ClusterName = name, clusterLink, resourceGroup, subscriptionId, connectivityStatus, provisioningState, kubernetesVersion, agentVersion, totalNodeCount, totalCoreCount, lastConnectivityTime, location\r\n| order by connectivityStatus asc, ClusterName asc",
+              "size": 0,
+              "showAnalytics": true,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  },
+                  {
+                    "columnMatch": "connectivityStatus",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Connected",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "provisioningState",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Succeeded",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failed",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "pending",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "aks-all-clusters"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "4"
+      },
+      "name": "aks-arc-clusters"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Update Readiness",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "# Azure Local Update Readiness"
+            },
+            "name": "text - 0"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend healthState = tostring(properties.healthState)\r\n| summarize Count = count() by healthState\r\n| order by Count desc",
+              "size": 1,
+              "title": "Health State Distribution",
+              "showAnalytics": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Success",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Failure",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "Warning",
+                    "color": "yellow"
+                  },
+                  {
+                    "seriesName": "InProgress",
+                    "color": "blue"
+                  },
+                  {
+                    "seriesName": "Unknown",
+                    "color": "gray"
+                  }
+                ]
+              }
+            },
+            "customWidth": "50",
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| summarize ClusterCount = count() by currentVersion\r\n| order by ClusterCount desc",
+              "size": 1,
+              "title": "Version Distribution",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart"
+            },
+            "customWidth": "50",
+            "name": "version-distribution-chart"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend healthState = tostring(properties.healthState)\r\n| extend state = tostring(properties.state)\r\n| summarize \r\n    Success = countif(healthState == \"Success\"),\r\n    Warning = countif(healthState == \"Warning\"),\r\n    Failure = countif(healthState == \"Failure\"),\r\n    InProgress = countif(healthState == \"InProgress\"),\r\n    Unknown = countif(healthState == \"Unknown\")\r\n    by state\r\n| extend Total = Success + Warning + Failure + InProgress + Unknown\r\n| union (\r\n    extensibilityresources\r\n    | where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n    | extend hciClusterName = tostring(split(id, '/')[8])\r\n    | extend healthState = tostring(properties.healthState)\r\n    | summarize \r\n        Success = countif(healthState == \"Success\"),\r\n        Warning = countif(healthState == \"Warning\"),\r\n        Failure = countif(healthState == \"Failure\"),\r\n        InProgress = countif(healthState == \"InProgress\"),\r\n        Unknown = countif(healthState == \"Unknown\")\r\n    | extend state = \"TOTAL\", Total = Success + Warning + Failure + InProgress + Unknown\r\n)\r\n| order by case(state == \"TOTAL\", 1, 0), state",
+              "size": 0,
+              "showAnalytics": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Success",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Warning",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "yellow",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Failure",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "redBright",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "labelSettings": [
+                  {
+                    "columnId": "Success",
+                    "label": "Success"
+                  },
+                  {
+                    "columnId": "Warning",
+                    "label": "Warning"
+                  },
+                  {
+                    "columnId": "Failure",
+                    "label": "Failure - Prechecks Failed",
+                    "comment": "Updates are Blocked"
+                  },
+                  {
+                    "columnId": "InProgress",
+                    "label": "Update In Progress"
+                  },
+                  {
+                    "columnId": "Unknown",
+                    "label": "Unknown"
+                  }
+                ]
+              }
+            },
+            "name": "query - 1"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Failure By Reason Summary"
+            },
+            "name": "text - 7"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "f8a2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "FailureClusterFilter",
+                  "label": "Filter by Cluster",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend healthCheckResult = properties.healthCheckResult\r\n| mv-expand healthCheck = healthCheckResult\r\n| where tostring(healthCheck.status) == \"Failed\"\r\n| where todatetime(healthCheck.timestamp) >= {TimeRange:start}\r\n| distinct hciClusterName\r\n| order by hciClusterName asc",
+                  "crossComponentResources": [
+                    "{Subscriptions}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "failure-cluster-filter"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend healthCheckResult = properties.healthCheckResult\r\n| mv-expand healthCheck = healthCheckResult\r\n| where tostring(healthCheck.status) == \"Failed\"\r\n| where todatetime(healthCheck.timestamp) >= {TimeRange:start}\r\n| extend displayName = tostring(split(tostring(healthCheck.name), '/')[0])\r\n| extend severity = tostring(healthCheck.severity)\r\n| where '*' in ({FailureClusterFilter}) or hciClusterName in ({FailureClusterFilter})\r\n| summarize FailureCount = count(), AffectedClustersList = make_set(hciClusterName), LatestOccurrence = max(todatetime(healthCheck.timestamp)) by displayName, severity\r\n| extend AffectedClusters = strcat_array(AffectedClustersList, ', '), ClusterCount = array_length(AffectedClustersList)\r\n| extend severityOrder = case(\r\n    severity == \"Critical\", 1,\r\n    severity == \"Warning\", 2,\r\n    severity == \"Informational\", 3,\r\n    4)\r\n| project displayName, severity, FailureCount, ClusterCount, AffectedClusters, LatestOccurrence, severityOrder\r\n| order by severityOrder asc, FailureCount desc\r\n",
+              "size": 0,
+              "showAnalytics": true,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "severity",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Critical",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Warning",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Informational",
+                          "representation": "info",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "severityOrder",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "AffectedClustersList",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "ClusterCount",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "5",
+                          "representation": "redBright",
+                          "text": "{0}{1} clusters"
+                        },
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "2",
+                          "representation": "yellow",
+                          "text": "{0}{1} clusters"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1} cluster(s)"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "query - 6"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Failed Prechecks"
+            },
+            "name": "text - 5"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "b902e267-cb73-433e-a5f4-5627f38003e5",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "clustername",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| project name",
+                  "resourceType": "microsoft.resourcegraph/resources",
+                  "crossComponentResources": [
+                    "{Subscriptions}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "value": [
+                    "value::all"
+                  ],
+                  "label": "Cluster Name"
+                },
+                {
+                  "id": "4f902e36-2dbc-4bdf-89aa-44d2bb919cc6",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "healthState",
+                  "label": "Health Check State",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "resourceTypeFilter": {
+                      "microsoft.azurestackhci/clusters": true,
+                      "microsoft.azurestackhci/clusters/updatesummaries": true,
+                      "microsoft.azurestackhci/clusters/updates/updateruns": true
+                    },
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\"Success\",\r\n\"Failure\",\r\n\"Warning\",\r\n\"InProgress\"\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all",
+                  "value": [
+                    "Failure",
+                    "Warning"
+                  ]
+                },
+                {
+                  "id": "206daa04-0fef-4254-9233-fc840e7f32b7",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "stepStatus",
+                  "label": "Health Check Step Status",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\"Succeeded\", \"Failed\"]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all",
+                  "value": [
+                    "Failed"
+                  ]
+                },
+                {
+                  "id": "5494563c-316b-4db1-beb0-183308801d74",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "severity",
+                  "label": "Severity",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ]
+                  },
+                  "jsonData": "[\"Critical\", \"Warning\", \"Informational\"]",
+                  "defaultValue": "value::all",
+                  "value": [
+                    "Warning",
+                    "Critical"
+                  ]
+                }
+              ],
+              "style": "formHorizontal",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "customWidth": "100",
+            "name": "param - cluster"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| project clusterName = name, clusterId = id, resourceGroup, subscriptionId\r\n| join kind=inner (\r\n    extensibilityresources\r\n    | where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n    | extend hciClusterName = tostring(split(id, '/')[8])\r\n    | extend healthState = tostring(properties.healthState)\r\n    | extend state = tostring(properties.state)\r\n    | extend lastChecked = todatetime(properties.lastChecked)\r\n    | extend currentVersion = tostring(properties.currentVersion)\r\n    | project hciClusterName, healthState, state, lastChecked, currentVersion\r\n) on $left.clusterName == $right.hciClusterName\r\n| join kind=leftouter (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines\"\r\n    | where properties.cloudMetadata.provider == \"AzSHCI\"\r\n    | summarize nodeCount = count() by resourceGroup\r\n) on resourceGroup\r\n| join kind=leftouter (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines\"\r\n    | where kind == \"HCI\"\r\n    | summarize VMCount = count() by resourceGroup\r\n) on resourceGroup\r\n| join kind=leftouter (\r\n    resources\r\n    | where type == \"microsoft.kubernetes/connectedclusters\"\r\n    | where properties.infrastructure == \"azure_stack_hci\"\r\n    | summarize AKSArcCount = count() by resourceGroup\r\n) on resourceGroup\r\n| where clusterName in ({clustername})\r\n| where healthState in ({healthState})\r\n| extend DaysSinceLastCheck = datetime_diff('day', now(), lastChecked)\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| project clusterName, clusterLink, healthState, state, currentVersion, lastChecked, DaysSinceLastCheck, resourceGroup, nodeCount = coalesce(nodeCount, 0), VMCount = coalesce(VMCount, 0), AKSArcCount = coalesce(AKSArcCount, 0)\r\n| order by DaysSinceLastCheck desc, clusterName asc",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "Cluster Health Overview",
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "clusterName",
+                    "formatter": 1
+                  },
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open in Portal"
+                    }
+                  },
+                  {
+                    "columnMatch": "healthState",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Success",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failure",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Warning",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "InProgress",
+                          "representation": "pending",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "DaysSinceLastCheck",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "4",
+                          "representation": "redBright",
+                          "text": "{0}{1} days"
+                        },
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "2",
+                          "representation": "yellow",
+                          "text": "{0}{1} days"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1} days"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "query - 3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| project clusterName = name, clusterId = id, resourceGroup, subscriptionId\r\n| join kind=inner (\r\n    extensibilityresources\r\n    | where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n    | extend hciClusterName = tostring(split(id, '/')[8])\r\n    | extend lastChecked = todatetime(properties.lastChecked)\r\n    | extend healthState = tostring(properties.healthState)\r\n    | extend provisioningState = tostring(properties.provisioningState)\r\n    | extend healthCheckResult = properties.healthCheckResult\r\n    | mv-expand healthCheck = healthCheckResult\r\n    | extend severityOrder = case(\r\n        tostring(healthCheck.severity) == \"Critical\", 1,\r\n        tostring(healthCheck.severity) == \"Warning\", 2,\r\n        tostring(healthCheck.severity) == \"Informational\", 3,\r\n        4)\r\n    | project hciClusterName, healthState, stepStatus = tostring(healthCheck.status), checkName = tostring(healthCheck.name), displayName = tostring(healthCheck.displayName), description = tostring(healthCheck.description), remediation = tostring(healthCheck.remediation), severity = tostring(healthCheck.severity), targetResourceName = tostring(healthCheck.targetResourceName), targetResourceType = tostring(healthCheck.targetResourceType), timestamp = todatetime(healthCheck.timestamp), lastChecked, severityOrder\r\n) on $left.clusterName == $right.hciClusterName\r\n| where clusterName in ({clustername})\r\n| where healthState in ({healthState})\r\n| where stepStatus in ({stepStatus})\r\n| where severity in ({severity})\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| extend DaysSinceCheck = datetime_diff('day', now(), lastChecked)\r\n| project clusterName, clusterLink, healthState, stepStatus, displayName, description, remediation, severity, targetResourceName, targetResourceType, timestamp, resourceGroup, lastChecked, DaysSinceCheck, severityOrder\r\n| order by severityOrder asc, lastChecked desc",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "Detailed Health Check Results",
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "clusterName",
+                    "formatter": 1
+                  },
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  },
+                  {
+                    "columnMatch": "healthState",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Success",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failure",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Warning",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "stepStatus",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Succeeded",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failed",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "severity",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Critical",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Warning",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Informational",
+                          "representation": "info",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "DaysSinceCheck",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "4",
+                          "representation": "redBright",
+                          "text": "{0}{1} days"
+                        },
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "2",
+                          "representation": "yellow",
+                          "text": "{0}{1} days"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1} days"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "severityOrder",
+                    "formatter": 5
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "query - 4"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "3"
+      },
+      "name": "grp-update-readiness"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Update Progress",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "# Update Progress & History\n\nTrack ongoing updates and review historical update runs across your Azure Local clusters."
+            },
+            "name": "text-update-progress-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend state = tostring(properties.state)\r\n| summarize Count = count() by state\r\n| order by Count desc",
+              "size": 3,
+              "title": "Update State Summary",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "state",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Count",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "50",
+            "name": "update-state-tiles"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend state = tostring(properties.state)\r\n| summarize Count = count() by state\r\n| order by Count desc",
+              "size": 0,
+              "title": "Update State Distribution",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "AppliedSuccessfully",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "UpdateInProgress",
+                    "color": "blue"
+                  },
+                  {
+                    "seriesName": "UpdateAvailable",
+                    "color": "yellow"
+                  },
+                  {
+                    "seriesName": "UpdateFailed",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "NeedsAttention",
+                    "color": "orange"
+                  }
+                ]
+              }
+            },
+            "customWidth": "50",
+            "name": "update-state-pie"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Clusters Currently Updating"
+            },
+            "name": "text-currently-updating"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend state = tostring(properties.state)\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| extend lastUpdated = todatetime(properties.lastUpdated)\r\n| extend lastChecked = todatetime(properties.lastChecked)\r\n| extend clusterId = substring(id, 0, indexof(id, '/updateSummaries/'))\r\n| where state in (\"UpdateInProgress\", \"Updating\", \"PreparingToUpdate\")\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| project ClusterName = hciClusterName, clusterLink, State = state, CurrentVersion = currentVersion, LastUpdated = lastUpdated, LastChecked = lastChecked\r\n| order by ClusterName asc",
+              "size": 0,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  },
+                  {
+                    "columnMatch": "State",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "Progress",
+                          "representation": "pending",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "pending",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "clusters-updating"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## All Cluster Update Status"
+            },
+            "name": "text-all-update-status"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend state = tostring(properties.state)\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| extend lastUpdated = todatetime(properties.lastUpdated)\r\n| extend lastChecked = todatetime(properties.lastChecked)\r\n| extend clusterId = substring(id, 0, indexof(id, '/updateSummaries/'))\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| extend DaysSinceUpdate = datetime_diff('day', now(), lastUpdated)\r\n| project ClusterName = hciClusterName, clusterLink, State = state, CurrentVersion = currentVersion, LastUpdated = lastUpdated, DaysSinceUpdate, LastChecked = lastChecked\r\n| order by DaysSinceUpdate desc, ClusterName asc",
+              "size": 0,
+              "showAnalytics": true,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  },
+                  {
+                    "columnMatch": "State",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "AppliedSuccessfully",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "Progress",
+                          "representation": "pending",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "UpdateAvailable",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "UpdateFailed",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "DaysSinceUpdate",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "60",
+                          "representation": "redBright",
+                          "text": "{0}{1} days"
+                        },
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "30",
+                          "representation": "yellow",
+                          "text": "{0}{1} days"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1} days"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "all-cluster-update-status"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Update Run History\n\nRecent update runs across all clusters."
+            },
+            "name": "text-update-history"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updates/updateruns\"\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend updateName = tostring(split(id, '/')[10])\r\n| extend runName = name\r\n| extend state = tostring(properties.state)\r\n| extend status = tostring(properties.status)\r\n| extend progress = tostring(properties.progress)\r\n| extend timeStarted = todatetime(properties.timeStarted)\r\n| extend lastUpdatedTime = todatetime(properties.lastUpdatedTime)\r\n| extend duration = tostring(properties.duration)\r\n| where todatetime(timeStarted) >= {TimeRange:start}\r\n| project ClusterName = hciClusterName, UpdateName = updateName, State = state, Status = status, Progress = progress, TimeStarted = timeStarted, LastUpdated = lastUpdatedTime, Duration = duration\r\n| order by TimeStarted desc",
+              "size": 0,
+              "showAnalytics": true,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "State",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Succeeded",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failed",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "InProgress",
+                          "representation": "pending",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "update-run-history"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "5"
+      },
+      "name": "grp-update-progress"
+    }
+  ],
+  "fallbackResourceIds": [
+    "azure monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
