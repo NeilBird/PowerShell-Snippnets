@@ -82,7 +82,7 @@ The workbook includes convenient links to:
 3. **Import the JSON Template**
    - In the Advanced Editor, select the **Gallery Template** tab
    - Delete any existing content in the editor
-   - Copy the entire contents of the `Azure-Workbook_AzLocal-Managing-Updates-At-Scale.json` file
+   - Copy the entire contents of the [`Azure-Workbook_AzLocal-Managing-Updates-At-Scale.json`](https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/Azure-Local-Manage-Updates-At-Scale/Azure-Workbook_AzLocal-Managing-Updates-At-Scale.json) file
    - Paste the JSON content into the editor
    - Click **Apply**
 
