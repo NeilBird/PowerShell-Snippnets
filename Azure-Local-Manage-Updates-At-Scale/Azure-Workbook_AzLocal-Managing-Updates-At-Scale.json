@@ -99,7 +99,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.5.2** | [Check for Updates to apply by checking the latest release available on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nThis example Workbook is a community driven project, (not officially supported by Microsoft). If you encounter an issue or have feedback, please [raise an Issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
+        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.5.3** | [Check for Updates to apply by checking the latest release available on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nThis example Workbook is a community driven project, (not officially supported by Microsoft). If you encounter an issue or have feedback, please [raise an Issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
       },
       "name": "workbook-title-version"
     },
@@ -303,7 +303,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend HealthStatus = tostring(properties.healthState)\r\n| extend HealthStatus = case(\r\n    HealthStatus == \"Success\", \"Healthy\",\r\n    HealthStatus == \"Warning\", \"Warning\",\r\n    HealthStatus == \"Failure\", \"Failed\",\r\n    \"Unknown\")\r\n| summarize Count = count() by HealthStatus",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend clusterName = tolower(tostring(split(id, '/')[8]))\r\n| extend clusterRG = tolower(resourceGroup)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterName = tolower(name), clusterRG = tolower(resourceGroup)\r\n) on clusterName, clusterRG\r\n| extend HealthStatus = tostring(properties.healthState)\r\n| extend HealthStatus = case(\r\n    HealthStatus == \"Success\", \"Healthy\",\r\n    HealthStatus == \"Warning\", \"Warning\",\r\n    HealthStatus == \"Failure\", \"Failed\",\r\n    \"Unknown\")\r\n| summarize Count = count() by HealthStatus",
               "size": 3,
               "title": "Cluster Health Status",
               "queryType": 1,
@@ -344,7 +344,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.resourceconnector/appliances\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend Status = tostring(properties.status)\r\n| extend Status = iff(Status == \"Running\", \"Online\", \"Offline\")\r\n| summarize Count = count() by Status",
+              "query": "resources\r\n| where type == \"microsoft.resourceconnector/appliances\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterRG = resourceGroup\r\n) on $left.resourceGroup == $right.clusterRG\r\n| extend Status = tostring(properties.status)\r\n| extend Status = iff(Status == \"Running\", \"Online\", \"Offline\")\r\n| summarize Count = count() by Status",
               "size": 3,
               "title": "ARB Status",
               "queryType": 1,
@@ -548,7 +548,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| summarize TotalNodes = count()\r\n| extend Label = 'Total Azure Local Machines'",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterRG = resourceGroup\r\n) on $left.resourceGroup == $right.clusterRG\r\n| summarize TotalNodes = count()\r\n| extend Label = 'Total Azure Local Machines'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -584,7 +584,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type in (\"microsoft.resourceconnector/appliances\", \"microsoft.azurestackhci/clusters\")\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| summarize TotalClusters = countif(type == \"microsoft.azurestackhci/clusters\"), OfflineARB = countif(type == \"microsoft.resourceconnector/appliances\" and properties.status == \"Offline\")\r\n| extend OfflinePercent = iff(TotalClusters == 0, 0.0, round(todouble(OfflineARB) / todouble(TotalClusters) * 100, 1))\r\n| extend Label = 'ARB Offline'\r\n| project Label, OfflineARB, OfflinePercent",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n| project clusterRG = resourceGroup\r\n| join kind=leftouter (\r\n    resources\r\n    | where type == \"microsoft.resourceconnector/appliances\"\r\n    | where properties.status == \"Offline\"\r\n    | project arbRG = resourceGroup\r\n) on $left.clusterRG == $right.arbRG\r\n| summarize TotalClusters = dcount(clusterRG), OfflineARB = dcountif(arbRG, isnotempty(arbRG))\r\n| extend OfflinePercent = iff(TotalClusters == 0, 0.0, round(todouble(OfflineARB) / todouble(TotalClusters) * 100, 1))\r\n| extend Label = 'ARB Offline'\r\n| project Label, OfflineARB, OfflinePercent",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -654,7 +654,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.healthState == \"Success\"\r\n| summarize HealthyClusters = count()\r\n| extend Label = 'Healthy Clusters'",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.healthState == \"Success\"\r\n| extend clusterName = tolower(tostring(split(id, '/')[8]))\r\n| extend clusterRG = tolower(resourceGroup)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterName = tolower(name), clusterRG = tolower(resourceGroup)\r\n) on clusterName, clusterRG\r\n| summarize HealthyClusters = count()\r\n| extend Label = 'Healthy Clusters'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -690,7 +690,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.healthState == \"Warning\"\r\n| summarize Warnings = count()\r\n| extend Label = 'Health Warnings'",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.healthState == \"Warning\"\r\n| extend clusterName = tolower(tostring(split(id, '/')[8]))\r\n| extend clusterRG = tolower(resourceGroup)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterName = tolower(name), clusterRG = tolower(resourceGroup)\r\n) on clusterName, clusterRG\r\n| summarize Warnings = count()\r\n| extend Label = 'Health Warnings'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -726,7 +726,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.healthState == \"Failure\"\r\n| summarize FailedPrechecks = count()\r\n| extend Label = 'Failed Prechecks'",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.healthState == \"Failure\"\r\n| extend clusterName = tolower(tostring(split(id, '/')[8]))\r\n| extend clusterRG = tolower(resourceGroup)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterName = tolower(name), clusterRG = tolower(resourceGroup)\r\n) on clusterName, clusterRG\r\n| summarize FailedPrechecks = count()\r\n| extend Label = 'Failed Prechecks'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -762,7 +762,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| project machineName = name, machineResourceGroup = resourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | project clusterResourceGroup = resourceGroup\r\n) on $left.machineResourceGroup == $right.clusterResourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines/extensions\"\r\n    | where properties.provisioningState == \"Failed\"\r\n    | parse id with * \"/machines/\" mName \"/extensions/\" *\r\n    | project mName, resourceGroup\r\n) on $left.machineName == $right.mName and $left.machineResourceGroup == $right.resourceGroup\r\n| summarize FailedExtensions = count()\r\n| extend Label = 'Failed Extensions'",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| project machineName = name, machineResourceGroup = resourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterResourceGroup = resourceGroup\r\n) on $left.machineResourceGroup == $right.clusterResourceGroup\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines/extensions\"\r\n    | where properties.provisioningState == \"Failed\"\r\n    | parse id with * \"/machines/\" mName \"/extensions/\" *\r\n    | project mName, resourceGroup\r\n) on $left.machineName == $right.mName and $left.machineResourceGroup == $right.resourceGroup\r\n| summarize FailedExtensions = count()\r\n| extend Label = 'Failed Extensions'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -798,7 +798,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| summarize Total = count(), Healthy = countif(properties.healthState == \"Success\")\r\n| extend Percentage = round(todouble(Healthy) / todouble(Total) * 100, 1)\r\n| extend Label = '% Healthy'\r\n| project Label, Percentage",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend clusterName = tolower(tostring(split(id, '/')[8]))\r\n| extend clusterRG = tolower(resourceGroup)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterName = tolower(name), clusterRG = tolower(resourceGroup)\r\n) on clusterName, clusterRG\r\n| summarize Total = count(), Healthy = countif(properties.healthState == \"Success\")\r\n| extend Percentage = round(todouble(Healthy) / todouble(Total) * 100, 1)\r\n| extend Label = '% Healthy'\r\n| project Label, Percentage",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -861,7 +861,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where kind == \"HCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| summarize TotalVMs = count()\r\n| extend Label = 'Total Azure Local VMs'",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where kind == \"HCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterRG = resourceGroup\r\n) on $left.resourceGroup == $right.clusterRG\r\n| summarize TotalVMs = count()\r\n| extend Label = 'Total Azure Local VMs'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -897,7 +897,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| summarize TotalAKSArc = count()\r\n| extend Label = 'Total AKS Arc Clusters'",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n    | project clusterRG = resourceGroup\r\n) on $left.resourceGroup == $right.clusterRG\r\n| summarize TotalAKSArc = count()\r\n| extend Label = 'Total AKS Arc Clusters'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -3954,7 +3954,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend healthCheckResult = properties.healthCheckResult\r\n| mv-expand healthCheck = healthCheckResult\r\n| where tostring(healthCheck.status) == \"Failed\"\r\n| where todatetime(healthCheck.timestamp) >= {TimeRange:start}\r\n| extend displayName = tostring(split(tostring(healthCheck.name), '/')[0])\r\n| extend severity = tostring(healthCheck.severity)\r\n| where '*' in ({FailureClusterFilter}) or hciClusterName in ({FailureClusterFilter})\r\n| summarize FailureCount = count(), AffectedClustersList = make_set(hciClusterName), LatestOccurrence = max(todatetime(healthCheck.timestamp)) by displayName, severity\r\n| extend AffectedClusters = strcat_array(AffectedClustersList, ', '), ClusterCount = array_length(AffectedClustersList)\r\n| extend severityOrder = case(\r\n    severity == \"Critical\", 1,\r\n    severity == \"Warning\", 2,\r\n    severity == \"Informational\", 3,\r\n    4)\r\n| project displayName, severity, FailureCount, ClusterCount, AffectedClusters, LatestOccurrence, severityOrder\r\n| order by severityOrder asc, FailureCount desc\r\n",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend healthCheckResult = properties.healthCheckResult\r\n| mv-expand healthCheck = healthCheckResult\r\n| where tostring(healthCheck.status) == \"Failed\"\r\n| where todatetime(healthCheck.timestamp) >= {TimeRange:start}\r\n| extend displayName = tostring(split(tostring(healthCheck.name), '/')[0])\r\n| extend severity = tostring(healthCheck.severity)\r\n| where '*' in ({FailureClusterFilter}) or hciClusterName in ({FailureClusterFilter})\r\n| summarize FailureCount = count(), AffectedClustersList = make_set(hciClusterName), LatestOccurrence = max(todatetime(healthCheck.timestamp)) by displayName, severity\r\n| extend AffectedClusters = strcat_array(AffectedClustersList, ', '), ClusterCount = array_length(AffectedClustersList)\r\n| extend severityOrder = case(\r\n    severity == \"Critical\", 1,\r\n    severity == \"Warning\", 2,\r\n    severity == \"Informational\", 3,\r\n    4)\r\n| extend ClusterCountForColor = iff(severity == \"Informational\", -1, ClusterCount)\r\n| project displayName, severity, FailureCount, ClusterCount, ClusterCountForColor, AffectedClusters, LatestOccurrence, severityOrder\r\n| order by severityOrder asc, FailureCount desc\r\n",
               "size": 0,
               "showAnalytics": true,
               "showRefreshButton": true,
@@ -4009,29 +4009,44 @@
                   },
                   {
                     "columnMatch": "ClusterCount",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "ClusterCountForColor",
                     "formatter": 18,
                     "formatOptions": {
                       "thresholdsOptions": "colors",
                       "thresholdsGrid": [
                         {
+                          "operator": "<",
+                          "thresholdValue": "0",
+                          "text": "[$ClusterCount] cluster(s)"
+                        },
+                        {
                           "operator": ">=",
                           "thresholdValue": "5",
                           "representation": "redBright",
-                          "text": "{0}{1} clusters"
+                          "text": "[$ClusterCount] clusters"
                         },
                         {
                           "operator": ">=",
                           "thresholdValue": "2",
                           "representation": "yellow",
-                          "text": "{0}{1} clusters"
+                          "text": "[$ClusterCount] clusters"
                         },
                         {
                           "operator": "Default",
                           "thresholdValue": null,
-                          "text": "{0}{1} cluster(s)"
+                          "text": "[$ClusterCount] cluster(s)"
                         }
                       ]
                     }
+                  }
+                ],
+                "labelSettings": [
+                  {
+                    "columnId": "ClusterCountForColor",
+                    "label": "Cluster Count"
                   }
                 ]
               }
