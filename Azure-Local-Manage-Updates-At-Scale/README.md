@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Latest Version: v0.5.1**
+**Latest Version: v0.5.2**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -112,7 +112,7 @@ Comprehensive view of physical server machines in Azure Local clusters:
   - Connection status summary tiles (Total, Connected, Disconnected)
   - Connection status pie chart
   - Hardware vendor distribution pie chart
-  - Solution version distribution pie chart
+  - OS version distribution pie chart
   - Arc Agent version distribution pie chart
   - License type distribution pie chart
 - **All Machines Table** (sorted with Connected first) with details including:
@@ -130,6 +130,7 @@ Comprehensive view of physical server machines in Azure Local clusters:
   - Failed extensions table with error details
 - **Network Adapter Details**:
   - Filter by Machine Name and NIC Status (Up/Down)
+  - **Note**: Cluster Tag filtering is not supported for this section due to Azure Resource Graph query limitations
   - NIC information from edge devices including adapter name, type, status, and interface description
   - Machine Name column showing actual host names (joined from hybrid compute machines)
   - Cluster column with link to the Azure Local cluster resource in Azure portal
@@ -146,7 +147,10 @@ Comprehensive view of physical server machines in Azure Local clusters:
 ### 🔗 ARB Status
 Monitor the status of Azure Resource Bridge appliances:
 - Warning banner about 45-day offline limit (displayed below Offline ARBs section) with link to troubleshooting documentation
-- ARB status summary per Azure Local instance
+- ARB status summary per Azure Local instance with pie chart
+  - Shows all ARBs including orphaned ones (where cluster has been deleted)
+  - "Unknown" displayed for HCIClusterConnectivity when cluster is missing
+  - Sorted with Running status first
 - Offline ARB appliances table showing ALL offline ARBs regardless of cluster connection status
 - **Last Modified** timestamp and **Days Since Last Modified** with color coding:
   - Green: 0 days
