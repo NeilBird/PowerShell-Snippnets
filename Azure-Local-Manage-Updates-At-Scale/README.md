@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.4.3**
+**Version: v0.4.4**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -47,7 +47,13 @@ Detailed view of cluster update readiness:
 ![Update Readiness](images/update-readiness-and-system-health-screenshot.png)
 
 ### 🔄 Update Progress
-Track the progress of ongoing updates across your clusters with detailed status information.
+Track the progress of ongoing updates across your clusters with detailed status information:
+- Update state summary tiles and pie chart distribution
+- **Clusters Currently Updating** table with live status
+- **Clusters with Updates Available** table with:
+  - Direct link to apply One Time Update in Azure Update Manager
+  - Link to Azure Local Known Issues documentation
+- **All Cluster Update Status** table with information about the 6-month support window
 
 ![Update Progress](images/update-progress-screenshot.png)
 
@@ -132,7 +138,7 @@ The workbook includes convenient quick action links to:
 - 🔔 Create Azure Monitor Alert Rules
 - 📜 View Activity Log
 - 💡 Azure Advisor Recommendations
-- 🏥 Service Health Status
+- 🏥 Azure Service Health Status
 - 📚 Azure Local Documentation
 - 🔄 Azure Local Update Guide
 
