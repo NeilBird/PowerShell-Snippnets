@@ -1,8 +1,10 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.4.9**
+**Latest Version: v0.4.9**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
+
+**Important:** This is a community driven project, (not officially supported by Microsoft), for any issues, requests or feedback, please [raise an Issue](https://github.com/NeilBird/PowerShell-Snippnets/issues) (note: no time scales or guarantees can be provided for responses to issues.)
 
 ## How to Import the Workbook
 
