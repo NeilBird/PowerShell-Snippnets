@@ -1,5 +1,7 @@
 # Azure Local - Managing Updates At Scale Workbook
 
+**Version: v0.3.1**
+
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
 ## Overview
@@ -8,7 +10,7 @@ This workbook uses Azure Resource Graph queries to aggregate and display real-ti
 
 ## Features
 
-The workbook is organized into six main tabs:
+The workbook is organized into seven main tabs:
 
 ### 📊 Summary Dashboard
 A high-level overview of your entire Azure Local estate, including:
@@ -52,6 +54,17 @@ View and manage extensions installed on Azure Local physical nodes:
 
 ![Physical Node Extensions](images/physical-nodes-extensions-screenshot.png)
 
+### 💻 Azure Local VMs
+Monitor virtual machines running on Azure Local clusters:
+- VM status summary tiles showing total VMs and connection status
+- VM connection status distribution pie chart
+- OS distribution pie chart showing operating system breakdown
+- VMs by resource group distribution
+- Bar chart showing VM deployments over time by month
+- Complete list of all VMs with details including OS version, agent version, and last status change
+- VMs grouped by hosting Azure Local cluster with counts
+- VM distribution bar chart by cluster
+
 ### ☸️ AKS Arc Clusters
 Monitor AKS Arc clusters running on Azure Local:
 - Connectivity status summary and chart
@@ -71,7 +84,27 @@ The workbook includes convenient links to:
 
 ## Parameters
 
-- **Subscriptions**: Filter data by one or more Azure subscriptions (defaults to all)
+The workbook provides several filtering options to help you focus on specific resources:
+
+### Scope Filters
+- **Subscriptions**: Filter data by one or more Azure subscriptions (defaults to all accessible subscriptions)
+
+### Resource Group Filter
+- **Resource Group Filter**: Optional wildcard filter for resource group names
+  - Use `*` as a wildcard character to match any sequence of characters
+  - Examples:
+    - `*-prod-*` matches resource groups containing "-prod-" (e.g., "rg-hci-prod-01", "azure-prod-cluster")
+    - `*hci*` matches any resource group containing "hci"
+    - `rg-*` matches resource groups starting with "rg-"
+  - Leave empty to show all resource groups
+
+### Cluster Tag Filter
+- **Cluster Tag Name**: The name of the tag to filter by (e.g., "Environment", "Team", "CostCenter")
+- **Cluster Tag Value**: The value of the tag to match (e.g., "Production", "IT-Ops")
+- **Note**: Tag filtering applies **only to Azure Local clusters** - it does not filter AKS Arc clusters or Azure Local VMs
+- Both Tag Name and Tag Value must be provided for the filter to take effect
+
+### Time Range
 - **Time Range**: Select the time range for time-based queries (1 day to 30 days, or custom)
 
 ## Prerequisites
