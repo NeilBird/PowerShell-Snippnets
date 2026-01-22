@@ -83,6 +83,8 @@ Comprehensive view of physical server machines in Azure Local clusters:
   - Extension status summary table and bar chart
   - Failed extensions table with error details
 
+![Azure Local Machines](images/physical-nodes-screenshot.png)
+
 ![Physical Machine Extensions](images/physical-nodes-extensions-screenshot.png)
 
 ### 🔗 ARB Status
