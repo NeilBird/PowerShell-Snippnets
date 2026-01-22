@@ -17,6 +17,8 @@ A high-level overview of your entire Azure Local estate, including:
 - **Health and Patching Status**: Healthy clusters, health warnings, failed prechecks, failed extensions, and health percentage
 - **Workload Summary**: Total Azure Local VMs and AKS Arc clusters
 
+![Summary Dashboard](images/summary-dashboard-screenshot.png)
+
 ### 📋 Update Readiness and System Health
 Detailed view of cluster update readiness:
 - Health state distribution chart
@@ -25,8 +27,12 @@ Detailed view of cluster update readiness:
 - Failed prechecks analysis with filtering by cluster, health state, and severity
 - Detailed failure reason summaries showing affected clusters and occurrence counts
 
+![Update Readiness and System Health](images/update-readiness-and-system-health-screenshot.png)
+
 ### 🔄 Update Progress
 Track the progress of ongoing updates across your clusters with detailed status information.
+
+![Update Progress](images/update-progress-screenshot.png)
 
 ### 🔗 Azure Resource Bridges (ARB) Status
 Monitor the status of Azure Resource Bridge appliances:
@@ -35,12 +41,16 @@ Monitor the status of Azure Resource Bridge appliances:
 - Complete list of all ARB appliances with status indicators
 - Direct links to open ARB and cluster resources in the Azure portal
 
+![Azure Resource Bridges Status](images/arb-offline-screenshot.png)
+
 ### 🧩 Physical Node Extensions
 View and manage extensions installed on Azure Local physical nodes:
 - Filter by extension status (Succeeded, Failed, Creating, Updating, Deleting)
 - Filter by extension name
 - Summary table showing extension counts by status
 - Detailed list of all node extensions with status indicators
+
+![Physical Node Extensions](images/physical-nodes-extensions-screenshot.png)
 
 ### ☸️ AKS Arc Clusters
 Monitor AKS Arc clusters running on Azure Local:
