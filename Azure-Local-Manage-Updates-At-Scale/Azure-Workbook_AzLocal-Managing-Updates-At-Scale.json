@@ -1834,7 +1834,7 @@
                 "size": "auto"
               }
             },
-            "customWidth": "8",
+            "customWidth": "15",
             "name": "tile-total-machines",
             "styleSettings": {
               "margin": "5px",
@@ -1870,7 +1870,7 @@
                 "size": "auto"
               }
             },
-            "customWidth": "8",
+            "customWidth": "15",
             "name": "tile-connected-machines",
             "styleSettings": {
               "margin": "5px",
@@ -1906,12 +1906,19 @@
                 "size": "auto"
               }
             },
-            "customWidth": "8",
+            "customWidth": "15",
             "name": "tile-disconnected-machines",
             "styleSettings": {
               "margin": "5px",
               "padding": "5px"
             }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "### Machine Overview"
+            },
+            "name": "text-machine-overview-header"
           },
           {
             "type": 3,
