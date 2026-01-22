@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.4.2**
+**Version: v0.4.3**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -79,8 +79,13 @@ Comprehensive view of physical server machines in Azure Local clusters:
 
 ### 🔗 ARB Status
 Monitor the status of Azure Resource Bridge appliances:
+- Warning banner about 45-day offline limit with link to troubleshooting documentation
 - ARB status summary per Azure Local instance
 - Offline ARB appliances with associated cluster information
+- **Last Connected** timestamp and **Days Since Last Connected** with color coding:
+  - Green: Recently connected (0 days)
+  - Yellow: 1-14 days since last connection
+  - Red: More than 14 days since last connection
 - Complete list of all ARB appliances with status indicators
 - Direct links to open ARB and cluster resources in the Azure portal
 
