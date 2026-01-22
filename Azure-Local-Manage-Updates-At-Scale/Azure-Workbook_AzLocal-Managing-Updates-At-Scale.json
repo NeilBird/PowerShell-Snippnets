@@ -1517,7 +1517,7 @@
                   "content": {
                     "version": "KqlItem/1.0",
                     "query": "{\"version\":\"Merge/1.0\",\"merges\":[{\"id\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\",\"mergeType\":\"table\",\"leftTable\":\"arcbridge-status\"}],\"projectRename\":[{\"originalName\":\"[arcbridge-status].ArcBridgeStatus\",\"mergedName\":\"ArcBridgeStatus\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].HCIStatus\",\"mergedName\":\"HCIStatus\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].TotalResources\",\"mergedName\":\"TotalResources\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].ArcBridgeCount\",\"mergedName\":\"ArcBridgeCount\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].HCIClusterCount\",\"mergedName\":\"HCIClusterCount\",\"fromId\":\"b39a061e-3234-4dbf-aeb0-c96077ed8030\"},{\"originalName\":\"[arcbridge-status].ClusterConnectivityStatus\",\"mergedName\":\"ClusterConnectivityStatus\",\"fromId\":\"unknown\"},{\"originalName\":\"[arcbridge-status].ClusterConnectivity\",\"mergedName\":\"ClusterConnectivity\",\"fromId\":\"unknown\"}]}",
-                    "size": 1,
+                    "size": 2,
                     "queryType": 7,
                     "visualization": "piechart"
                   },
