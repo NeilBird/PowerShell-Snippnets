@@ -99,7 +99,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.7** | [View on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
+        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.8** | [View on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
       },
       "name": "workbook-title-version"
     },
@@ -2622,10 +2622,70 @@
             "name": "text-nic-status-header"
           },
           {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "nic-machine-filter",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "NicMachineFilter",
+                  "label": "Machine Name",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.cloudMetadata.provider == \"AzSHCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| distinct name\r\n| order by name asc",
+                  "crossComponentResources": [
+                    "{Subscriptions}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                },
+                {
+                  "id": "nic-status-filter",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "NicStatusFilter",
+                  "label": "NIC Status",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/edgedevices\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend reportedProperties = properties.reportedProperties.networkProfile.nicDetails\r\n| mv-expand nic = reportedProperties\r\n| extend nicStatus = tostring(nic.nicStatus)\r\n| where isnotempty(nicStatus)\r\n| distinct nicStatus\r\n| order by nicStatus asc",
+                  "crossComponentResources": [
+                    "{Subscriptions}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "nic-filters"
+          },
+          {
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/edgedevices\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend deviceName = tostring(name)\r\n| extend reportedProperties = properties.reportedProperties.networkProfile.nicDetails\r\n| mv-expand nic = reportedProperties\r\n| extend nicName = tostring(nic.adapterName)\r\n| extend nicStatus = tostring(nic.nicStatus)\r\n| extend driverVersion = tostring(nic.driverVersion)\r\n| extend interfaceDescription = tostring(nic.interfaceDescription)\r\n| extend nicType = case(interfaceDescription contains \"Hyper-V\", \"Virtual\", interfaceDescription contains \"Virtual\", \"Virtual\", \"Physical\")\r\n| extend ip4Address = tostring(nic.ip4Address)\r\n| extend subnetMask = tostring(nic.subnetMask)\r\n| extend defaultGateway = tostring(nic.defaultGateway)\r\n| extend dnsServers = strcat_array(nic.dnsServers, ', ')\r\n| extend macAddress = tostring(nic.macAddress)\r\n| project DeviceName = deviceName, NicName = nicName, NicType = nicType, Status = nicStatus, DriverVersion = driverVersion, InterfaceDescription = interfaceDescription, IP4Address = ip4Address, SubnetMask = subnetMask, DefaultGateway = defaultGateway, DNSServers = dnsServers, MACAddress = macAddress, ResourceGroup = resourceGroup\r\n| order by DeviceName asc, NicType asc, NicName asc",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/edgedevices\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend deviceName = tostring(name)\r\n| extend edgeDeviceRG = resourceGroup\r\n| extend reportedProperties = properties.reportedProperties.networkProfile.nicDetails\r\n| mv-expand nic = reportedProperties\r\n| extend nicName = tostring(nic.adapterName)\r\n| extend nicStatus = tostring(nic.nicStatus)\r\n| extend driverVersion = tostring(nic.driverVersion)\r\n| extend interfaceDescription = tostring(nic.interfaceDescription)\r\n| extend nicType = case(interfaceDescription contains \"Hyper-V\", \"Virtual\", interfaceDescription contains \"Virtual\", \"Virtual\", \"Physical\")\r\n| extend ip4Address = tostring(nic.ip4Address)\r\n| extend subnetMask = tostring(nic.subnetMask)\r\n| extend defaultGateway = tostring(nic.defaultGateway)\r\n| extend dnsServers = strcat_array(nic.dnsServers, ', ')\r\n| extend macAddress = tostring(nic.macAddress)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines\"\r\n    | where properties.cloudMetadata.provider == \"AzSHCI\"\r\n    | project machineName = name, machineRG = resourceGroup, machineParentClusterResourceId = tostring(properties.parentClusterResourceId)\r\n) on $left.edgeDeviceRG == $right.machineRG\r\n| join kind=leftouter (\r\n    resources\r\n    | where type == \"microsoft.azurestackhci/clusters\"\r\n    | project clusterId = id, clusterName = name\r\n) on $left.machineParentClusterResourceId == $right.clusterId\r\n| where '*' in ({NicMachineFilter}) or machineName in ({NicMachineFilter})\r\n| where '*' in ({NicStatusFilter}) or nicStatus in ({NicStatusFilter})\r\n| project MachineName = machineName, ClusterName = clusterName, ClusterId = clusterId, NicName = nicName, NicType = nicType, Status = nicStatus, DriverVersion = driverVersion, InterfaceDescription = interfaceDescription, IP4Address = ip4Address, SubnetMask = subnetMask, DefaultGateway = defaultGateway, DNSServers = dnsServers, MACAddress = macAddress, ResourceGroup = edgeDeviceRG\r\n| order by MachineName asc, NicType asc, NicName asc",
               "size": 0,
               "title": "All Network Adapters",
               "showRefreshButton": true,
@@ -2637,6 +2697,18 @@
               ],
               "gridSettings": {
                 "formatters": [
+                  {
+                    "columnMatch": "ClusterName",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Resource",
+                      "linkIsContextBlade": true
+                    }
+                  },
+                  {
+                    "columnMatch": "ClusterId",
+                    "formatter": 5
+                  },
                   {
                     "columnMatch": "Status",
                     "formatter": 18,
@@ -2669,8 +2741,12 @@
                 "filter": true,
                 "labelSettings": [
                   {
-                    "columnId": "DeviceName",
-                    "label": "Device Name"
+                    "columnId": "MachineName",
+                    "label": "Machine Name"
+                  },
+                  {
+                    "columnId": "ClusterName",
+                    "label": "Cluster"
                   },
                   {
                     "columnId": "NicName",

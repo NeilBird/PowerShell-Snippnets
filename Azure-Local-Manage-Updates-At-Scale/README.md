@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.4.7**
+**Version: v0.4.8**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -127,7 +127,10 @@ Comprehensive view of physical server machines in Azure Local clusters:
   - Extension status summary table and bar chart
   - Failed extensions table with error details
 - **Network Adapter Details**:
+  - Filter by Machine Name and NIC Status (Up/Down)
   - NIC information from edge devices including adapter name, type, status, and interface description
+  - Machine Name column showing actual host names (joined from hybrid compute machines)
+  - Cluster column with link to the Azure Local cluster resource in Azure portal
   - NIC Type (Virtual or Physical) derived from interface description
   - Status with icons (Up = green, Down = red)
   - Driver version for each network adapter
