@@ -35,6 +35,8 @@ A high-level overview of your entire Azure Local estate, including:
 
 ![Summary Dashboard](images/summary-dashboard-screenshot.png)
 
+![Summary Dashboard - Clusters](images/summary-dashboard-2-screenshot.png)
+
 ### 📋 Update Readiness
 Detailed view of cluster update readiness:
 - Health state distribution chart
@@ -113,6 +115,10 @@ Monitor virtual machines running on Azure Local clusters:
   - OS install date and last status change
 - VMs grouped by hosting Azure Local cluster with hardware specs
 - VM distribution bar chart by cluster
+
+![Azure Local VMs](images/azure-local-vms-screenshot.png)
+
+![Azure Local VMs - By Cluster](images/azure-local-vms-2-screenshot.png)
 
 ### ☸️ AKS Arc Clusters
 Monitor AKS Arc clusters running on Azure Local:
