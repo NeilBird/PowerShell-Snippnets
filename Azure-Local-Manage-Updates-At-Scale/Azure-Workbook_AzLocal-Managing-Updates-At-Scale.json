@@ -99,7 +99,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.5.6** | [Check for Updates to apply by checking the latest release available on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nThis example Workbook is a community driven project, (not officially supported by Microsoft). If you encounter an issue or have feedback, please [raise an Issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
+        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.5.7** | [Check for Updates to apply by checking the latest release available on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nThis example Workbook is a community driven project, (not officially supported by Microsoft). If you encounter an issue or have feedback, please [raise an Issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
       },
       "name": "workbook-title-version"
     },
@@ -3797,7 +3797,7 @@
                   "multiSelect": true,
                   "quote": "'",
                   "delimiter": ",",
-                  "query": "kubernetesconfigurationresources\r\n| where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend extensionName = tostring(properties.ExtensionType)\r\n| parse id with clusterId \"/providers/Microsoft.KubernetesConfiguration/extensions/\" *\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.kubernetes/connectedclusters\"\r\n    | where properties.infrastructure == \"azure_stack_hci\"\r\n    | project clusterId = id\r\n) on clusterId\r\n| distinct extensionName\r\n| order by extensionName asc",
+                  "query": "kubernetesconfigurationresources\r\n| where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend extensionName = coalesce(tostring(properties.ExtensionType), tostring(properties.extensionType))\r\n| parse tolower(id) with clusterId \"/providers/microsoft.kubernetesconfiguration/extensions/\" *\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.kubernetes/connectedclusters\"\r\n    | where properties.infrastructure == \"azure_stack_hci\"\r\n    | project clusterId = tolower(id)\r\n) on clusterId\r\n| where isnotempty(extensionName)\r\n| distinct extensionName\r\n| order by extensionName asc",
                   "crossComponentResources": [
                     "{Subscriptions}"
                   ],
@@ -3822,7 +3822,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| project clusterId = id, clusterName = name\r\n| join kind=inner (\r\n    kubernetesconfigurationresources\r\n    | where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | extend status = tostring(properties.ProvisioningState)\r\n    | extend extensionName = tostring(properties.ExtensionType)\r\n    | parse id with clusterId \"/providers/Microsoft.KubernetesConfiguration/extensions/\" *\r\n    | project extensionName, status, clusterId\r\n) on clusterId\r\n| where '*' in ({AksExtensionNameFilter}) or extensionName in ({AksExtensionNameFilter})\r\n| where '*' in ({AksExtensionStatusFilter}) or status in ({AksExtensionStatusFilter})\r\n| summarize count() by extensionName, status\r\n| summarize \r\n    Succeeded = sumif(count_, status == \"Succeeded\"),\r\n    Failed = sumif(count_, status == \"Failed\"),\r\n    Creating = sumif(count_, status == \"Creating\"),\r\n    Updating = sumif(count_, status == \"Updating\"),\r\n    Deleting = sumif(count_, status == \"Deleting\"),\r\n    Other = sumif(count_, status !in (\"Succeeded\", \"Failed\", \"Creating\", \"Updating\", \"Deleting\"))\r\n    by extensionName\r\n| project extensionName, Succeeded, Failed, Creating, Updating, Deleting, Other\r\n| order by extensionName asc",
+              "query": "kubernetesconfigurationresources\r\n| where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend status = coalesce(tostring(properties.ProvisioningState), tostring(properties.provisioningState))\r\n| extend extensionName = coalesce(tostring(properties.ExtensionType), tostring(properties.extensionType))\r\n| parse tolower(id) with clusterId \"/providers/microsoft.kubernetesconfiguration/extensions/\" *\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.kubernetes/connectedclusters\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | where properties.infrastructure == \"azure_stack_hci\"\r\n    | project clusterId = tolower(id), clusterName = name\r\n) on clusterId\r\n| where isnotempty(extensionName)\r\n| where '*' in ({AksExtensionNameFilter}) or extensionName in ({AksExtensionNameFilter})\r\n| where '*' in ({AksExtensionStatusFilter}) or status in ({AksExtensionStatusFilter})\r\n| summarize count() by extensionName, status\r\n| summarize \r\n    Succeeded = sumif(count_, status == \"Succeeded\"),\r\n    Failed = sumif(count_, status == \"Failed\"),\r\n    Creating = sumif(count_, status == \"Creating\"),\r\n    Updating = sumif(count_, status == \"Updating\"),\r\n    Deleting = sumif(count_, status == \"Deleting\"),\r\n    Other = sumif(count_, status !in (\"Succeeded\", \"Failed\", \"Creating\", \"Updating\", \"Deleting\"))\r\n    by extensionName\r\n| project extensionName, Succeeded, Failed, Creating, Updating, Deleting, Other\r\n| order by extensionName asc",
               "size": 0,
               "showRefreshButton": true,
               "title": "AKS Extension Status by Type",
@@ -3961,7 +3961,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| project clusterId = id, clusterName = name, clusterResourceGroup = resourceGroup, subscriptionId\r\n| join kind=inner (\r\n    kubernetesconfigurationresources\r\n    | where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | extend status = tostring(properties.ProvisioningState)\r\n    | where status == \"Failed\"\r\n    | extend extensionName = tostring(properties.ExtensionType)\r\n    | extend message = tostring(properties.Statuses[0].message)\r\n    | parse id with clusterId \"/providers/Microsoft.KubernetesConfiguration/extensions/\" *\r\n    | project extensionName, status, message, clusterId\r\n) on clusterId\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| project clusterName, clusterLink, extensionName, status, message, resourceGroup = clusterResourceGroup, subscriptionId\r\n| order by clusterName asc, extensionName asc",
+              "query": "kubernetesconfigurationresources\r\n| where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend status = coalesce(tostring(properties.ProvisioningState), tostring(properties.provisioningState))\r\n| where status == \"Failed\"\r\n| extend extensionName = coalesce(tostring(properties.ExtensionType), tostring(properties.extensionType))\r\n| extend message = coalesce(tostring(properties.Statuses[0].message), tostring(properties.statuses[0].message))\r\n| parse tolower(id) with clusterId \"/providers/microsoft.kubernetesconfiguration/extensions/\" *\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.kubernetes/connectedclusters\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | where properties.infrastructure == \"azure_stack_hci\"\r\n    | project clusterId = tolower(id), clusterName = name, clusterResourceGroup = resourceGroup, subscriptionId\r\n) on clusterId\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| project clusterName, clusterLink, extensionName, status, message, resourceGroup = clusterResourceGroup, subscriptionId\r\n| order by clusterName asc, extensionName asc",
               "size": 0,
               "showAnalytics": true,
               "title": "⚠️ Failed AKS Extensions",
@@ -4275,7 +4275,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend healthCheckResult = properties.healthCheckResult\r\n| mv-expand healthCheck = healthCheckResult\r\n| where tostring(healthCheck.status) == \"Failed\"\r\n| where todatetime(healthCheck.timestamp) >= {TimeRange:start}\r\n| extend displayName = tostring(split(tostring(healthCheck.name), '/')[0])\r\n| extend severity = tostring(healthCheck.severity)\r\n| where '*' in ({FailureClusterFilter}) or hciClusterName in ({FailureClusterFilter})\r\n| summarize FailureCount = count(), AffectedClustersList = make_set(hciClusterName), LatestOccurrence = max(todatetime(healthCheck.timestamp)) by displayName, severity\r\n| extend AffectedClusters = strcat_array(AffectedClustersList, ', '), ClusterCount = array_length(AffectedClustersList)\r\n| extend severityOrder = case(\r\n    severity == \"Critical\", 1,\r\n    severity == \"Warning\", 2,\r\n    severity == \"Informational\", 3,\r\n    4)\r\n| extend ClusterCountForColor = iff(severity == \"Informational\", -1, ClusterCount)\r\n| project displayName, severity, FailureCount, ClusterCount, ClusterCountForColor, AffectedClusters, LatestOccurrence, severityOrder\r\n| order by severityOrder asc, FailureCount desc\r\n",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend healthCheckResult = properties.healthCheckResult\r\n| mv-expand healthCheck = healthCheckResult\r\n| where tostring(healthCheck.status) == \"Failed\"\r\n| where todatetime(healthCheck.timestamp) >= {TimeRange:start}\r\n| extend displayName = tostring(split(tostring(healthCheck.name), '/')[0])\r\n| extend severity = tostring(healthCheck.severity)\r\n| where '*' in ({FailureClusterFilter}) or hciClusterName in ({FailureClusterFilter})\r\n| summarize FailureCount = count(), AffectedClustersList = make_set(hciClusterName), LatestOccurrence = max(todatetime(healthCheck.timestamp)) by displayName, severity\r\n| extend AffectedClusters = strcat_array(AffectedClustersList, ', '), ClusterCount = array_length(AffectedClustersList)\r\n| extend severityOrder = case(\r\n    severity == \"Critical\", 1,\r\n    severity == \"Warning\", 2,\r\n    severity == \"Informational\", 3,\r\n    4)\r\n| project displayName, severity, FailureCount, ClusterCount, AffectedClusters, LatestOccurrence, severityOrder\r\n| order by severityOrder asc, FailureCount desc\r\n",
               "size": 0,
               "showAnalytics": true,
               "showRefreshButton": true,
@@ -4327,46 +4327,15 @@
                   {
                     "columnMatch": "AffectedClustersList",
                     "formatter": 5
-                  },
-                  {
-                    "columnMatch": "ClusterCount",
-                    "formatter": 5
-                  },
-                  {
-                    "columnMatch": "ClusterCountForColor",
-                    "formatter": 18,
-                    "formatOptions": {
-                      "thresholdsOptions": "colors",
-                      "thresholdsGrid": [
-                        {
-                          "operator": "<",
-                          "thresholdValue": "0",
-                          "text": "{ClusterCount} cluster(s)"
-                        },
-                        {
-                          "operator": ">=",
-                          "thresholdValue": "5",
-                          "representation": "redBright",
-                          "text": "{ClusterCount} clusters"
-                        },
-                        {
-                          "operator": ">=",
-                          "thresholdValue": "2",
-                          "representation": "yellow",
-                          "text": "{ClusterCount} clusters"
-                        },
-                        {
-                          "operator": "Default",
-                          "thresholdValue": null,
-                          "text": "{ClusterCount} cluster(s)"
-                        }
-                      ]
-                    }
                   }
                 ],
                 "labelSettings": [
                   {
-                    "columnId": "ClusterCountForColor",
+                    "columnId": "displayName",
+                    "label": "Failure Reason"
+                  },
+                  {
+                    "columnId": "ClusterCount",
                     "label": "Cluster Count"
                   }
                 ]
@@ -4801,49 +4770,6 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updates/updateruns\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend state = tostring(properties.state)\r\n| extend timeStarted = todatetime(properties.timeStarted)\r\n| where timeStarted >= {TimeRange:start}\r\n| extend Day = startofday(timeStarted)\r\n| summarize Count = count() by Day, state\r\n| order by Day asc",
-              "size": 0,
-              "title": "Update Attempts by Day",
-              "queryType": 1,
-              "resourceType": "microsoft.resourcegraph/resources",
-              "crossComponentResources": [
-                "{Subscriptions}"
-              ],
-              "visualization": "barchart",
-              "chartSettings": {
-                "xAxis": "Day",
-                "yAxis": [
-                  "Count"
-                ],
-                "group": "state",
-                "createOtherGroup": null,
-                "showLegend": true,
-                "seriesLabelSettings": [
-                  {
-                    "seriesName": "Succeeded",
-                    "color": "green"
-                  },
-                  {
-                    "seriesName": "Failed",
-                    "color": "redBright"
-                  },
-                  {
-                    "seriesName": "InProgress",
-                    "color": "blue"
-                  },
-                  {
-                    "seriesName": "Unknown",
-                    "color": "gray"
-                  }
-                ]
-              }
-            },
-            "name": "update-attempts-by-day-chart"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
               "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend state = tostring(properties.state)\r\n| summarize Count = count() by state\r\n| order by Count desc",
               "size": 3,
               "title": "Update State Summary",
@@ -4912,6 +4838,49 @@
             },
             "customWidth": "50",
             "name": "update-state-pie"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updates/updateruns\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend state = tostring(properties.state)\r\n| extend timeStarted = todatetime(properties.timeStarted)\r\n| where timeStarted >= {TimeRange:start}\r\n| extend DayValue = startofday(timeStarted)\r\n| extend Day = format_datetime(DayValue, 'yyyy-MM-dd')\r\n| summarize Count = count() by Day, state\r\n| order by Day asc",
+              "size": 0,
+              "title": "Update Attempts by Day",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "barchart",
+              "chartSettings": {
+                "xAxis": "Day",
+                "yAxis": [
+                  "Count"
+                ],
+                "group": "state",
+                "createOtherGroup": null,
+                "showLegend": true,
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "InProgress",
+                    "color": "blue"
+                  },
+                  {
+                    "seriesName": "Unknown",
+                    "color": "gray"
+                  }
+                ]
+              }
+            },
+            "name": "update-attempts-by-day-chart"
           },
           {
             "type": 1,
