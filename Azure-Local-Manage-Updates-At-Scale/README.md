@@ -10,11 +10,9 @@ This workbook uses Azure Resource Graph queries to aggregate and display real-ti
 
 ## Features
 
-The workbook is organized into seven tabs across two rows for better navigation:
+The workbook is organized into seven tabs:
 
-**Row 1**: 📊 Summary Dashboard | 📋 Update Readiness | 🔄 Update Progress | 🔗 ARB Status
-
-**Row 2**: 🖥️ Azure Local Nodes | 💻 Azure Local VMs | ☸️ AKS Arc Clusters
+📊 Summary Dashboard | 📋 Update Readiness | 🔄 Update Progress | 🔗 ARB Status | 🖥️ Azure Local Nodes | 💻 Azure Local VMs | ☸️ AKS Arc Clusters
 
 ### 📊 Summary Dashboard
 A high-level overview of your entire Azure Local estate, including:
@@ -32,15 +30,16 @@ A high-level overview of your entire Azure Local estate, including:
 
 ![Summary Dashboard](images/summary-dashboard-screenshot.png)
 
-### 📋 Update Readiness and System Health
+### 📋 Update Readiness
 Detailed view of cluster update readiness:
 - Health state distribution chart
 - Version distribution across clusters
 - Summary of health states by update status
 - Failed prechecks analysis with filtering by cluster, health state, and severity
 - Detailed failure reason summaries showing affected clusters and occurrence counts
+- Link to Microsoft documentation for troubleshooting Azure Local updates
 
-![Update Readiness and System Health](images/update-readiness-and-system-health-screenshot.png)
+![Update Readiness](images/update-readiness-and-system-health-screenshot.png)
 
 ### 🔄 Update Progress
 Track the progress of ongoing updates across your clusters with detailed status information.
