@@ -79,14 +79,14 @@ Comprehensive view of physical server machines in Azure Local clusters:
 
 ### 🔗 ARB Status
 Monitor the status of Azure Resource Bridge appliances:
-- Warning banner about 45-day offline limit with link to troubleshooting documentation
+- Warning banner about 45-day offline limit (displayed below Offline ARBs section) with link to troubleshooting documentation
 - ARB status summary per Azure Local instance
 - Offline ARB appliances with associated cluster information
-- **Last Connected** timestamp and **Days Since Last Connected** with color coding:
-  - Green: Recently connected (0 days)
-  - Yellow: 1-14 days since last connection
-  - Red: More than 14 days since last connection
-- Complete list of all ARB appliances with status indicators
+- **Last Modified** timestamp and **Days Since Last Modified** with color coding:
+  - Green: 0 days
+  - Yellow: 1-14 days
+  - Red: More than 14 days
+- All ARB appliances table showing "Connected" (green) for Running ARBs or days since last modified (yellow) for Offline ARBs
 - Direct links to open ARB and cluster resources in the Azure portal
 
 ![Azure Resource Bridges Status](images/arb-offline-screenshot.png)
