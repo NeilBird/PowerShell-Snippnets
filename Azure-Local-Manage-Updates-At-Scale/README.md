@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Latest Version: v0.5.3**
+**Latest Version: v0.5.6**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -96,6 +96,7 @@ Detailed view of cluster update readiness:
 
 ### 🔄 Update Progress
 Track the progress of ongoing updates across your clusters with detailed status information:
+- **Update Attempts by Day** stacked bar chart showing update attempts per day with status breakdown (Succeeded, Failed, InProgress)
 - Update state summary tiles and pie chart distribution
 - **Clusters Currently Updating** table with live status
 - **Clusters with Updates Available** table with:
@@ -131,6 +132,7 @@ Comprehensive view of physical server machines in Azure Local clusters:
 - **Network Adapter Details**:
   - Filter by Machine Name and NIC Status (Up/Down)
   - **Note**: Cluster Tag filtering is not supported for this section due to Azure Resource Graph query limitations
+  - NIC Status Distribution pie chart showing Up/Down/Disconnected counts (respects filters)
   - NIC information from edge devices including adapter name, type, status, and interface description
   - Machine Name column showing actual host names (joined from hybrid compute machines)
   - Cluster column with link to the Azure Local cluster resource in Azure portal
@@ -198,6 +200,11 @@ Monitor AKS Arc clusters running on Azure Local:
   - Certificate expiration date
   - Cluster creation date
 - Certificate expiration warning table showing clusters with certificates expiring within 30 days
+- **AKS Arc Cluster Extensions**:
+  - Filter by extension status (Succeeded, Failed, Creating, Updating, Deleting)
+  - Filter by extension name
+  - Extension status summary table and bar chart (similar to Node Extensions)
+  - Failed extensions table with error details
 
 ![AKS Arc Clusters](images/aks-clusters-screenshot.png)
 

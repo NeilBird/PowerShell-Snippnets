@@ -99,7 +99,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.5.3** | [Check for Updates to apply by checking the latest release available on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nThis example Workbook is a community driven project, (not officially supported by Microsoft). If you encounter an issue or have feedback, please [raise an Issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
+        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.5.6** | [Check for Updates to apply by checking the latest release available on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nThis example Workbook is a community driven project, (not officially supported by Microsoft). If you encounter an issue or have feedback, please [raise an Issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
       },
       "name": "workbook-title-version"
     },
@@ -2774,6 +2774,39 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/edgedevices\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend reportedProperties = properties.reportedProperties.networkProfile.nicDetails\r\n| extend edgeDeviceRG = resourceGroup\r\n| mv-expand nic = reportedProperties\r\n| extend nicStatus = tostring(nic.nicStatus)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines\"\r\n    | where properties.cloudMetadata.provider == \"AzSHCI\"\r\n    | project machineName = name, machineRG = resourceGroup\r\n) on $left.edgeDeviceRG == $right.machineRG\r\n| where '*' in ({NicMachineFilter}) or machineName in ({NicMachineFilter})\r\n| where '*' in ({NicStatusFilter}) or nicStatus in ({NicStatusFilter})\r\n| summarize Count = count() by nicStatus\r\n| order by Count desc",
+              "size": 3,
+              "title": "NIC Status Distribution",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Up",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Disconnected",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "Down",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "50",
+            "name": "nic-status-pie-chart"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
               "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/edgedevices\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend deviceName = tostring(name)\r\n| extend edgeDeviceRG = resourceGroup\r\n| extend reportedProperties = properties.reportedProperties.networkProfile.nicDetails\r\n| mv-expand nic = reportedProperties\r\n| extend nicName = tostring(nic.adapterName)\r\n| extend nicStatus = tostring(nic.nicStatus)\r\n| extend driverVersion = tostring(nic.driverVersion)\r\n| extend interfaceDescription = tostring(nic.interfaceDescription)\r\n| extend nicType = case(interfaceDescription contains \"Hyper-V\", \"Virtual\", interfaceDescription contains \"Virtual\", \"Virtual\", \"Physical\")\r\n| extend ip4Address = tostring(nic.ip4Address)\r\n| extend subnetMask = tostring(nic.subnetMask)\r\n| extend defaultGateway = tostring(nic.defaultGateway)\r\n| extend dnsServers = strcat_array(nic.dnsServers, ', ')\r\n| extend macAddress = tostring(nic.macAddress)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.hybridcompute/machines\"\r\n    | where properties.cloudMetadata.provider == \"AzSHCI\"\r\n    | extend parentClusterId = tostring(properties.parentClusterResourceId)\r\n    | extend clusterName = tostring(split(parentClusterId, '/')[8])\r\n    | project machineName = name, machineRG = resourceGroup, clusterId = parentClusterId, clusterName\r\n) on $left.edgeDeviceRG == $right.machineRG\r\n| where '*' in ({NicMachineFilter}) or machineName in ({NicMachineFilter})\r\n| where '*' in ({NicStatusFilter}) or nicStatus in ({NicStatusFilter})\r\n| project MachineName = machineName, ClusterName = clusterName, ClusterId = clusterId, NicName = nicName, NicType = nicType, Status = nicStatus, DriverVersion = driverVersion, InterfaceDescription = interfaceDescription, IP4Address = ip4Address, SubnetMask = subnetMask, DefaultGateway = defaultGateway, DNSServers = dnsServers, MACAddress = macAddress, ResourceGroup = edgeDeviceRG\r\n| order by MachineName asc, NicType asc, NicName asc",
               "size": 0,
               "title": "All Network Adapters",
@@ -3722,6 +3755,294 @@
               }
             },
             "name": "aks-cert-expiration"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\r\n## AKS Arc Cluster Extensions\r\nArc agent extensions installed on AKS Arc clusters."
+            },
+            "name": "text-aks-extensions-divider"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "aks-ext-status-filter-001",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "AksExtensionStatusFilter",
+                  "label": "Extension Status",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\"Succeeded\", \"Failed\", \"Creating\", \"Updating\", \"Deleting\"]",
+                  "defaultValue": "value::all"
+                },
+                {
+                  "id": "aks-ext-name-filter-001",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "AksExtensionNameFilter",
+                  "label": "Extension Name",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "kubernetesconfigurationresources\r\n| where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend extensionName = tostring(properties.ExtensionType)\r\n| parse id with clusterId \"/providers/Microsoft.KubernetesConfiguration/extensions/\" *\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.kubernetes/connectedclusters\"\r\n    | where properties.infrastructure == \"azure_stack_hci\"\r\n    | project clusterId = id\r\n) on clusterId\r\n| distinct extensionName\r\n| order by extensionName asc",
+                  "crossComponentResources": [
+                    "{Subscriptions}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "aks-extensions-filters"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| project clusterId = id, clusterName = name\r\n| join kind=inner (\r\n    kubernetesconfigurationresources\r\n    | where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | extend status = tostring(properties.ProvisioningState)\r\n    | extend extensionName = tostring(properties.ExtensionType)\r\n    | parse id with clusterId \"/providers/Microsoft.KubernetesConfiguration/extensions/\" *\r\n    | project extensionName, status, clusterId\r\n) on clusterId\r\n| where '*' in ({AksExtensionNameFilter}) or extensionName in ({AksExtensionNameFilter})\r\n| where '*' in ({AksExtensionStatusFilter}) or status in ({AksExtensionStatusFilter})\r\n| summarize count() by extensionName, status\r\n| summarize \r\n    Succeeded = sumif(count_, status == \"Succeeded\"),\r\n    Failed = sumif(count_, status == \"Failed\"),\r\n    Creating = sumif(count_, status == \"Creating\"),\r\n    Updating = sumif(count_, status == \"Updating\"),\r\n    Deleting = sumif(count_, status == \"Deleting\"),\r\n    Other = sumif(count_, status !in (\"Succeeded\", \"Failed\", \"Creating\", \"Updating\", \"Deleting\"))\r\n    by extensionName\r\n| project extensionName, Succeeded, Failed, Creating, Updating, Deleting, Other\r\n| order by extensionName asc",
+              "size": 0,
+              "showRefreshButton": true,
+              "title": "AKS Extension Status by Type",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Succeeded",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Failed",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "redBright",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Creating",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Updating",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">",
+                          "thresholdValue": "0",
+                          "representation": "yellow",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "labelSettings": [
+                  {
+                    "columnId": "extensionName",
+                    "label": "Extension"
+                  }
+                ]
+              }
+            },
+            "customWidth": "60",
+            "name": "aks-extension-status-table",
+            "styleSettings": {
+              "margin": "5",
+              "padding": "5",
+              "maxWidth": "60"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "{\"version\":\"Merge/1.0\",\"merges\":[{\"id\":\"aks-ext-merge-001\",\"mergeType\":\"table\",\"leftTable\":\"aks-extension-status-table\"}],\"projectRename\":[{\"originalName\":\"[aks-extension-status-table].extensionName\",\"mergedName\":\"extensionName\",\"fromId\":\"aks-ext-merge-001\"},{\"originalName\":\"[aks-extension-status-table].Succeeded\",\"mergedName\":\"Succeeded\",\"fromId\":\"aks-ext-merge-001\"},{\"originalName\":\"[aks-extension-status-table].Failed\",\"mergedName\":\"Failed\",\"fromId\":\"aks-ext-merge-001\"},{\"originalName\":\"[aks-extension-status-table].Creating\",\"mergedName\":\"Creating\",\"fromId\":\"aks-ext-merge-001\"},{\"originalName\":\"[aks-extension-status-table].Updating\",\"mergedName\":\"Updating\",\"fromId\":\"aks-ext-merge-001\"},{\"originalName\":\"[aks-extension-status-table].Deleting\",\"mergedName\":\"Deleting\",\"fromId\":\"aks-ext-merge-001\"},{\"originalName\":\"[aks-extension-status-table].Other\",\"mergedName\":\"Other\",\"fromId\":\"aks-ext-merge-001\"}]}",
+              "size": 0,
+              "title": "AKS Extension Status Chart",
+              "queryType": 7,
+              "visualization": "categoricalbar",
+              "chartSettings": {
+                "xSettings": {
+                  "label": "Extension"
+                },
+                "ySettings": {
+                  "label": "Count"
+                }
+              }
+            },
+            "customWidth": "40",
+            "showPin": false,
+            "name": "aks-extension-status-chart",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px",
+              "maxWidth": "40"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.kubernetes/connectedclusters\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where properties.infrastructure == \"azure_stack_hci\"\r\n| project clusterId = id, clusterName = name, clusterResourceGroup = resourceGroup, subscriptionId\r\n| join kind=inner (\r\n    kubernetesconfigurationresources\r\n    | where type == \"microsoft.kubernetesconfiguration/extensions\"\r\n    | where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n    | extend status = tostring(properties.ProvisioningState)\r\n    | where status == \"Failed\"\r\n    | extend extensionName = tostring(properties.ExtensionType)\r\n    | extend message = tostring(properties.Statuses[0].message)\r\n    | parse id with clusterId \"/providers/Microsoft.KubernetesConfiguration/extensions/\" *\r\n    | project extensionName, status, message, clusterId\r\n) on clusterId\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| project clusterName, clusterLink, extensionName, status, message, resourceGroup = clusterResourceGroup, subscriptionId\r\n| order by clusterName asc, extensionName asc",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "⚠️ Failed AKS Extensions",
+              "noDataMessage": "No failed AKS extensions found",
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  },
+                  {
+                    "columnMatch": "status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failed",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "message",
+                    "formatter": 1
+                  }
+                ],
+                "rowLimit": 1000,
+                "filter": true,
+                "labelSettings": [
+                  {
+                    "columnId": "clusterName",
+                    "label": "Cluster"
+                  },
+                  {
+                    "columnId": "clusterLink",
+                    "label": "Cluster Link"
+                  },
+                  {
+                    "columnId": "extensionName",
+                    "label": "Extension"
+                  },
+                  {
+                    "columnId": "status",
+                    "label": "Status"
+                  },
+                  {
+                    "columnId": "message",
+                    "label": "Error Message"
+                  },
+                  {
+                    "columnId": "resourceGroup",
+                    "label": "Resource Group"
+                  },
+                  {
+                    "columnId": "subscriptionId",
+                    "label": "Subscription"
+                  }
+                ]
+              }
+            },
+            "name": "aks-failed-extensions-table"
           }
         ]
       },
@@ -4020,24 +4341,24 @@
                         {
                           "operator": "<",
                           "thresholdValue": "0",
-                          "text": "[$ClusterCount] cluster(s)"
+                          "text": "{ClusterCount} cluster(s)"
                         },
                         {
                           "operator": ">=",
                           "thresholdValue": "5",
                           "representation": "redBright",
-                          "text": "[$ClusterCount] clusters"
+                          "text": "{ClusterCount} clusters"
                         },
                         {
                           "operator": ">=",
                           "thresholdValue": "2",
                           "representation": "yellow",
-                          "text": "[$ClusterCount] clusters"
+                          "text": "{ClusterCount} clusters"
                         },
                         {
                           "operator": "Default",
                           "thresholdValue": null,
-                          "text": "[$ClusterCount] cluster(s)"
+                          "text": "{ClusterCount} cluster(s)"
                         }
                       ]
                     }
@@ -4475,6 +4796,49 @@
               "json": "# Update Progress & History\n\nTrack ongoing updates and review historical update runs across your Azure Local clusters."
             },
             "name": "text-update-progress-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updates/updateruns\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend state = tostring(properties.state)\r\n| extend timeStarted = todatetime(properties.timeStarted)\r\n| where timeStarted >= {TimeRange:start}\r\n| extend Day = startofday(timeStarted)\r\n| summarize Count = count() by Day, state\r\n| order by Day asc",
+              "size": 0,
+              "title": "Update Attempts by Day",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "barchart",
+              "chartSettings": {
+                "xAxis": "Day",
+                "yAxis": [
+                  "Count"
+                ],
+                "group": "state",
+                "createOtherGroup": null,
+                "showLegend": true,
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "InProgress",
+                    "color": "blue"
+                  },
+                  {
+                    "seriesName": "Unknown",
+                    "color": "gray"
+                  }
+                ]
+              }
+            },
+            "name": "update-attempts-by-day-chart"
           },
           {
             "type": 3,
