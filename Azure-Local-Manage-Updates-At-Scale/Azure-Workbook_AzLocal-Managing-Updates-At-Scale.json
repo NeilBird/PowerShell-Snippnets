@@ -138,7 +138,7 @@
             "id": "a73ee4cb-fbb6-4d62-a290-18479bfe7958",
             "cellValue": "selectedTab",
             "linkTarget": "parameter",
-            "linkLabel": "📋 Update Readiness and System Health",
+            "linkLabel": "📋 Update Readiness",
             "subTarget": "3",
             "style": "link"
           },
