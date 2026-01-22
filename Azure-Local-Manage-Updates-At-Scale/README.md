@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.3.2**
+**Version: v0.4.1**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -12,13 +12,14 @@ This workbook uses Azure Resource Graph queries to aggregate and display real-ti
 
 The workbook is organized into seven tabs:
 
-📊 Summary Dashboard | 📋 Update Readiness | 🔄 Update Progress | 🔗 ARB Status | 🖥️ Azure Local Nodes | 💻 Azure Local VMs | ☸️ AKS Arc Clusters
+📊 Summary Dashboard | 📋 Update Readiness | 🔄 Update Progress | �️ Azure Local Machines | 🔗 ARB Status | 💻 Azure Local VMs | ☸️ AKS Arc Clusters
 
 ### 📊 Summary Dashboard
 A high-level overview of your entire Azure Local estate, including:
 - **Visual Summary Charts**: Pie charts showing cluster connectivity, health status, and Azure Resource Bridge (ARB) status
 - **Azure Local Totals and Connectivity**: Tile metrics for total clusters, connected/disconnected clusters, connection percentage, total nodes, and offline ARBs
 - **Health and Patching Status**: Healthy clusters, health warnings, failed prechecks, failed extensions, and health percentage
+- **Update Compliance**: Tiles showing clusters on supported version (6-month rolling window), unsupported version, updates available, updates in progress, and update failures. Version compliance is calculated based on the YYMM component of the cluster version (e.g., `xx.2512.x.x` = December 2025 release). Includes links to Lifecycle cadence and Latest releases documentation.
 - **Workload Summary**: Total Azure Local VMs and AKS Arc clusters
 - **Cluster Details Charts**: 
   - OS version distribution (e.g., 24H2, 23H2)
@@ -46,6 +47,32 @@ Track the progress of ongoing updates across your clusters with detailed status 
 
 ![Update Progress](images/update-progress-screenshot.png)
 
+### �️ Azure Local Machines
+Comprehensive view of physical server machines in Azure Local clusters:
+- **Last Refreshed timestamp** and documentation links
+- **Machine Overview**:
+  - Connection status summary tiles (Total, Connected, Disconnected)
+  - Connection status pie chart
+  - Hardware vendor distribution pie chart
+  - Solution version distribution pie chart
+  - Arc Agent version distribution pie chart
+  - License type distribution pie chart
+- **All Machines Table** (sorted with Connected first) with details including:
+  - Machine name and cluster association
+  - Connection status with icons
+  - vCPUs (logical core count) and memory (GB)
+  - Hardware vendor, model, and processor
+  - Solution version and IP address
+  - OS version and last status change
+- **Disconnected Machines** warning table
+- **Machine Extensions**:
+  - Filter by extension status (Succeeded, Failed, Creating, Updating, Deleting)
+  - Filter by extension name
+  - Extension status summary table and bar chart
+  - Failed extensions table with error details
+
+![Physical Machine Extensions](images/physical-nodes-extensions-screenshot.png)
+
 ### 🔗 ARB Status
 Monitor the status of Azure Resource Bridge appliances:
 - ARB status summary per Azure Local instance
@@ -54,29 +81,6 @@ Monitor the status of Azure Resource Bridge appliances:
 - Direct links to open ARB and cluster resources in the Azure portal
 
 ![Azure Resource Bridges Status](images/arb-offline-screenshot.png)
-
-### 🖥️ Azure Local Nodes
-Comprehensive view of physical server nodes in Azure Local clusters:
-- **Node Overview**:
-  - Connection status summary tiles (Total, Connected, Disconnected)
-  - Connection status pie chart
-  - Hardware vendor distribution pie chart
-  - Solution version distribution pie chart
-- **All Nodes Table** with details including:
-  - Node name and cluster association
-  - Connection status with icons
-  - vCPUs (logical core count) and memory (GB)
-  - Hardware vendor, model, and processor
-  - Solution version and IP address
-  - OS version and last status change
-- **Disconnected Nodes** warning table
-- **Node Extensions**:
-  - Filter by extension status (Succeeded, Failed, Creating, Updating, Deleting)
-  - Filter by extension name
-  - Extension status summary table and bar chart
-  - Failed extensions table with error details
-
-![Physical Node Extensions](images/physical-nodes-extensions-screenshot.png)
 
 ### 💻 Azure Local VMs
 Monitor virtual machines running on Azure Local clusters:
@@ -115,11 +119,13 @@ Monitor AKS Arc clusters running on Azure Local:
 
 ## Quick Actions
 
-The workbook includes convenient links to:
-- Create Azure Monitor Alert Rules
-- View Activity Log
-- Azure Advisor Recommendations
-- Azure Local Documentation
+The workbook includes convenient quick action links to:
+- 🔔 Create Azure Monitor Alert Rules
+- 📜 View Activity Log
+- 💡 Azure Advisor Recommendations
+- 🏥 Service Health Status
+- 📚 Azure Local Documentation
+- 🔄 Azure Local Update Guide
 
 ## Parameters
 
