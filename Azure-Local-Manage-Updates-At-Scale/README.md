@@ -60,7 +60,7 @@ Monitor virtual machines running on Azure Local clusters:
 - VM connection status distribution pie chart
 - OS distribution pie chart showing operating system breakdown
 - VMs by resource group distribution
-- Bar chart showing VM deployments over time by month
+- Bar chart showing VM deployments over time with configurable time range (1-24 months)
 - Complete list of all VMs with details including OS version, agent version, and last status change
 - VMs grouped by hosting Azure Local cluster with counts
 - VM distribution bar chart by cluster

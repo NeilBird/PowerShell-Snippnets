@@ -1485,7 +1485,7 @@
                 "showBorder": true
               }
             },
-            "customWidth": "25",
+            "customWidth": "50",
             "name": "vm-summary-tile",
             "styleSettings": {
               "margin": "5px",
@@ -1522,7 +1522,7 @@
                 ]
               }
             },
-            "customWidth": "25",
+            "customWidth": "50",
             "name": "vm-status-pie",
             "styleSettings": {
               "margin": "5px",
@@ -1543,7 +1543,7 @@
               ],
               "visualization": "piechart"
             },
-            "customWidth": "25",
+            "customWidth": "50",
             "name": "vm-os-distribution",
             "styleSettings": {
               "margin": "5px",
@@ -1564,7 +1564,7 @@
               ],
               "visualization": "piechart"
             },
-            "customWidth": "25",
+            "customWidth": "50",
             "name": "vm-by-rg",
             "styleSettings": {
               "margin": "5px",
@@ -1579,10 +1579,36 @@
             "name": "text-vm-deployments"
           },
           {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "vm-deployment-months",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "VMDeploymentMonths",
+                  "label": "Time Range (Months)",
+                  "type": 2,
+                  "isRequired": true,
+                  "value": "12",
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[{\"value\":\"24\",\"label\":\"24 months\"},{\"value\":\"18\",\"label\":\"18 months\"},{\"value\":\"12\",\"label\":\"12 months\"},{\"value\":\"9\",\"label\":\"9 months\"},{\"value\":\"6\",\"label\":\"6 months\"},{\"value\":\"5\",\"label\":\"5 months\"},{\"value\":\"4\",\"label\":\"4 months\"},{\"value\":\"3\",\"label\":\"3 months\"},{\"value\":\"2\",\"label\":\"2 months\"},{\"value\":\"1\",\"label\":\"1 month\"}]"
+                }
+              ],
+              "style": "pills",
+              "queryType": 0,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "vm-deployment-params"
+          },
+          {
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where kind == \"HCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend createdTime = todatetime(properties.vmUuid)\r\n| extend createdDate = iff(isnotempty(systemData.createdAt), format_datetime(todatetime(systemData.createdAt), 'yyyy-MM'), 'Unknown')\r\n| where createdDate != 'Unknown'\r\n| summarize VMCount = count() by createdDate\r\n| order by createdDate asc",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where kind == \"HCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend createdAt = todatetime(systemData.createdAt)\r\n| where isnotempty(createdAt)\r\n| where createdAt >= ago(toint('{VMDeploymentMonths}') * 30d)\r\n| extend createdDate = format_datetime(createdAt, 'yyyy-MM')\r\n| summarize VMCount = count() by createdDate\r\n| order by createdDate asc",
               "size": 0,
               "title": "VM Deployments by Month",
               "queryType": 1,
