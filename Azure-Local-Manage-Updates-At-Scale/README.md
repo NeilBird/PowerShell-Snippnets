@@ -1,8 +1,52 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.4.6**
+**Version: v0.4.7**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
+
+## How to Import the Workbook
+
+1. **Navigate to Azure Monitor Workbooks**
+   - Open the [Azure portal](https://portal.azure.com)
+   - Search for "Monitor" in the search bar and select **Monitor**
+   - In the left navigation, select **Workbooks**
+
+2. **Create a New Workbook**
+   - Click **+ New** to create a new workbook
+   - In the empty workbook, click the **Advanced Editor** button (</> icon) in the toolbar
+
+3. **Import the JSON Template**
+   - In the Advanced Editor, select the **Gallery Template** tab
+   - Delete any existing content in the editor
+   - Copy the entire contents of the [`Azure-Workbook_AzLocal-Managing-Updates-At-Scale.json`](https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/Azure-Local-Manage-Updates-At-Scale/Azure-Workbook_AzLocal-Managing-Updates-At-Scale.json) file
+   - Paste the JSON content into the editor
+   - Click **Apply**
+
+4. **Save the Workbook**
+   - Click **Done Editing** to exit edit mode
+   - Click **Save** or **Save As** in the toolbar
+   - Provide a name (e.g., "Azure Local - Managing Updates At Scale")
+   - Select a subscription, resource group, and location to save the workbook
+   - Click **Save**
+
+5. **Pin to Dashboard (Optional)**
+   - After saving, you can pin individual tiles or the entire workbook to an Azure dashboard for quick access
+
+### Alternative Import Method
+
+You can also import directly from the Workbooks gallery:
+
+1. Go to **Monitor** > **Workbooks**
+2. Click **+ New**
+3. Click the **</>** (Advanced Editor) button
+4. Select **Gallery Template** tab
+5. Paste the JSON content and click **Apply**
+
+## Prerequisites
+
+- Access to Azure subscriptions containing Azure Local clusters
+- Reader permissions on the resources you want to monitor
+- Azure Monitor Workbooks access in the Azure portal
 
 ## Overview
 
@@ -82,11 +126,13 @@ Comprehensive view of physical server machines in Azure Local clusters:
   - Filter by extension name
   - Extension status summary table and bar chart
   - Failed extensions table with error details
-- **Network Adapter Status**:
-  - NIC information from edge devices including adapter name and status
+- **Network Adapter Details**:
+  - NIC information from edge devices including adapter name, type, status, and interface description
+  - NIC Type (Virtual or Physical) derived from interface description
+  - Status with icons (Up = green, Down = red)
   - Driver version for each network adapter
   - IP address, subnet mask, default gateway, and DNS servers
-  - MAC address and interface description
+  - MAC address for hardware identification
 
 ![Azure Local Machines](images/physical-nodes-screenshot.png)
 
@@ -179,50 +225,6 @@ The workbook provides several filtering options to help you focus on specific re
 
 ### Time Range
 - **Time Range**: Select the time range for time-based queries (1 day to 30 days, or custom)
-
-## Prerequisites
-
-- Access to Azure subscriptions containing Azure Local clusters
-- Reader permissions on the resources you want to monitor
-- Azure Monitor Workbooks access in the Azure portal
-
-## How to Import the Workbook
-
-1. **Navigate to Azure Monitor Workbooks**
-   - Open the [Azure portal](https://portal.azure.com)
-   - Search for "Monitor" in the search bar and select **Monitor**
-   - In the left navigation, select **Workbooks**
-
-2. **Create a New Workbook**
-   - Click **+ New** to create a new workbook
-   - In the empty workbook, click the **Advanced Editor** button (</> icon) in the toolbar
-
-3. **Import the JSON Template**
-   - In the Advanced Editor, select the **Gallery Template** tab
-   - Delete any existing content in the editor
-   - Copy the entire contents of the [`Azure-Workbook_AzLocal-Managing-Updates-At-Scale.json`](https://raw.githubusercontent.com/NeilBird/PowerShell-Snippnets/refs/heads/main/Azure-Local-Manage-Updates-At-Scale/Azure-Workbook_AzLocal-Managing-Updates-At-Scale.json) file
-   - Paste the JSON content into the editor
-   - Click **Apply**
-
-4. **Save the Workbook**
-   - Click **Done Editing** to exit edit mode
-   - Click **Save** or **Save As** in the toolbar
-   - Provide a name (e.g., "Azure Local - Managing Updates At Scale")
-   - Select a subscription, resource group, and location to save the workbook
-   - Click **Save**
-
-5. **Pin to Dashboard (Optional)**
-   - After saving, you can pin individual tiles or the entire workbook to an Azure dashboard for quick access
-
-## Alternative Import Method
-
-You can also import directly from the Workbooks gallery:
-
-1. Go to **Monitor** > **Workbooks**
-2. Click **+ New**
-3. Click the **</>** (Advanced Editor) button
-4. Select **Gallery Template** tab
-5. Paste the JSON content and click **Apply**
 
 ## Usage Tips
 
