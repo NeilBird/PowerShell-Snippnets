@@ -99,7 +99,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.8** | [Check for Updates to apply on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
+        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.9** | [Check for Updates to apply on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
       },
       "name": "workbook-title-version"
     },
@@ -2753,14 +2753,14 @@
                         },
                         {
                           "operator": "==",
-                          "thresholdValue": "Down",
-                          "representation": "4",
+                          "thresholdValue": "Disconnected",
+                          "representation": "critical",
                           "text": "{0}{1}"
                         },
                         {
                           "operator": "Default",
                           "thresholdValue": null,
-                          "representation": "Unknown",
+                          "representation": "unknown",
                           "text": "{0}{1}"
                         }
                       ]
