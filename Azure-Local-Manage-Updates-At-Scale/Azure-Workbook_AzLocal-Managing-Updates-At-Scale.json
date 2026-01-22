@@ -1950,7 +1950,7 @@
                 ]
               }
             },
-            "customWidth": "25",
+            "customWidth": "33",
             "name": "node-connection-pie",
             "styleSettings": {
               "margin": "5px",
@@ -1971,7 +1971,7 @@
               ],
               "visualization": "piechart"
             },
-            "customWidth": "25",
+            "customWidth": "33",
             "name": "node-vendor-pie",
             "styleSettings": {
               "margin": "5px",
@@ -1992,7 +1992,7 @@
               ],
               "visualization": "piechart"
             },
-            "customWidth": "25",
+            "customWidth": "33",
             "name": "node-version-pie",
             "styleSettings": {
               "margin": "5px",
@@ -2013,7 +2013,7 @@
               ],
               "visualization": "piechart"
             },
-            "customWidth": "25",
+            "customWidth": "33",
             "name": "node-agent-version-pie",
             "styleSettings": {
               "margin": "5px",
@@ -2034,7 +2034,7 @@
               ],
               "visualization": "piechart"
             },
-            "customWidth": "25",
+            "customWidth": "33",
             "name": "node-license-type-pie",
             "styleSettings": {
               "margin": "5px",
