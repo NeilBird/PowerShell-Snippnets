@@ -99,7 +99,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.4** | [View on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
+        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.5** | [View on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
       },
       "name": "workbook-title-version"
     },
@@ -2613,6 +2613,121 @@
               }
             },
             "name": "failed-extensions-table"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Network Adapter Status\r\n\r\nNetwork adapter (NIC) information from Azure Local edge devices, including driver versions and link status."
+            },
+            "name": "text-nic-status-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/edgedevices\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend deviceName = tostring(name)\r\n| extend deviceKind = tostring(kind)\r\n| extend reportedProperties = properties.deviceConfiguration.nicDetails\r\n| mv-expand nic = reportedProperties\r\n| extend nicName = tostring(nic.adapterName)\r\n| extend nicStatus = tostring(nic.['componentStatus'].status)\r\n| extend driverVersion = tostring(nic.driverVersion)\r\n| extend interfaceDescription = tostring(nic.interfaceDescription)\r\n| extend ip4Address = tostring(nic.ip4Address)\r\n| extend subnetMask = tostring(nic.subnetMask)\r\n| extend defaultGateway = tostring(nic.defaultGateway)\r\n| extend dnsServers = tostring(nic.dnsServers)\r\n| extend macAddress = tostring(nic.macAddress)\r\n| extend linkSpeed = tostring(nic.slot)\r\n| project DeviceName = deviceName, NicName = nicName, Status = nicStatus, DriverVersion = driverVersion, InterfaceDescription = interfaceDescription, IP4Address = ip4Address, SubnetMask = subnetMask, DefaultGateway = defaultGateway, DNSServers = dnsServers, MACAddress = macAddress, ResourceGroup = resourceGroup\r\n| order by DeviceName asc, NicName asc",
+              "size": 0,
+              "title": "All Network Adapters",
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Success",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Warning",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Error",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failed",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "Unknown",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "rowLimit": 1000,
+                "filter": true,
+                "labelSettings": [
+                  {
+                    "columnId": "DeviceName",
+                    "label": "Device Name"
+                  },
+                  {
+                    "columnId": "NicName",
+                    "label": "Adapter Name"
+                  },
+                  {
+                    "columnId": "Status",
+                    "label": "Status"
+                  },
+                  {
+                    "columnId": "DriverVersion",
+                    "label": "Driver Version"
+                  },
+                  {
+                    "columnId": "InterfaceDescription",
+                    "label": "Interface Description"
+                  },
+                  {
+                    "columnId": "IP4Address",
+                    "label": "IP Address"
+                  },
+                  {
+                    "columnId": "SubnetMask",
+                    "label": "Subnet Mask"
+                  },
+                  {
+                    "columnId": "DefaultGateway",
+                    "label": "Default Gateway"
+                  },
+                  {
+                    "columnId": "DNSServers",
+                    "label": "DNS Servers"
+                  },
+                  {
+                    "columnId": "MACAddress",
+                    "label": "MAC Address"
+                  },
+                  {
+                    "columnId": "ResourceGroup",
+                    "label": "Resource Group"
+                  }
+                ]
+              }
+            },
+            "name": "nic-status-table"
           }
         ]
       },
