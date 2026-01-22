@@ -1784,7 +1784,7 @@
           {
             "type": 1,
             "content": {
-              "json": "# Azure Local Physical Nodes\r\nPhysical server nodes that make up Azure Local (Azure Stack HCI) clusters, connected through Azure Arc.\r\n\r\n**Last Refreshed:** {TimeRange:label} | Click refresh on any tile to update data"
+              "json": "# Azure Local Physical Machines\r\nPhysical server machines that make up Azure Local (Azure Stack HCI) clusters, connected through Azure Arc.\r\n\r\n**Last Refreshed:** {TimeRange:label} | Click refresh on any tile to update data"
             },
             "name": "text-nodes-header"
           },
@@ -2086,30 +2086,30 @@
                     "columnMatch": "status",
                     "formatter": 18,
                     "formatOptions": {
-                      "thresholdsOptions": "icons",
+                      "thresholdsOptions": "colors",
                       "thresholdsGrid": [
                         {
                           "operator": "==",
                           "thresholdValue": "Connected",
-                          "representation": "success",
+                          "representation": "green",
                           "text": "{0}{1}"
                         },
                         {
                           "operator": "==",
                           "thresholdValue": "Disconnected",
-                          "representation": "4",
+                          "representation": "redBright",
                           "text": "{0}{1}"
                         },
                         {
                           "operator": "==",
                           "thresholdValue": "Error",
-                          "representation": "error",
+                          "representation": "orange",
                           "text": "{0}{1}"
                         },
                         {
                           "operator": "Default",
                           "thresholdValue": null,
-                          "representation": "unknown",
+                          "representation": "gray",
                           "text": "{0}{1}"
                         }
                       ]
