@@ -126,7 +126,7 @@ Monitor AKS Arc clusters running on Azure Local:
 
 ![AKS Arc Clusters](images/aks-clusters-screenshot.png)
 
-## Quick Actions
+## Quick Actions and Knowledge Links
 
 The workbook includes convenient quick action links to:
 - 🔔 Create Azure Monitor Alert Rules
