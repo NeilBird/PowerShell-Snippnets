@@ -4320,7 +4320,72 @@
           {
             "type": 1,
             "content": {
-              "json": "## All Cluster Update Status"
+              "json": "## Clusters with Updates Available"
+            },
+            "name": "text-updates-available"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend hciClusterName = tostring(split(id, '/')[8])\r\n| extend state = tostring(properties.state)\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| extend lastChecked = todatetime(properties.lastChecked)\r\n| extend clusterId = substring(id, 0, indexof(id, '/updateSummaries/'))\r\n| where state == \"UpdateAvailable\"\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', clusterId)\r\n| extend oneTimeUpdateLink = strcat('https://portal.azure.com/#@/resource', clusterId, '/oneTimeUpdate')\r\n| project ClusterName = hciClusterName, clusterLink, CurrentVersion = currentVersion, LastChecked = lastChecked, oneTimeUpdateLink\r\n| order by ClusterName asc",
+              "size": 0,
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "clusterLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Open Cluster"
+                    }
+                  },
+                  {
+                    "columnMatch": "oneTimeUpdateLink",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "🔄 Apply Update"
+                    }
+                  }
+                ],
+                "labelSettings": [
+                  {
+                    "columnId": "ClusterName",
+                    "label": "Cluster Name"
+                  },
+                  {
+                    "columnId": "clusterLink",
+                    "label": "Cluster"
+                  },
+                  {
+                    "columnId": "CurrentVersion",
+                    "label": "Current Version"
+                  },
+                  {
+                    "columnId": "LastChecked",
+                    "label": "Last Checked"
+                  },
+                  {
+                    "columnId": "oneTimeUpdateLink",
+                    "label": "One Time Update"
+                  }
+                ]
+              }
+            },
+            "name": "clusters-updates-available"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## All Cluster Update Status\r\n\r\n💡 **Information:** Apply updates to keep your clusters within the six month support window."
             },
             "name": "text-all-update-status"
           },
