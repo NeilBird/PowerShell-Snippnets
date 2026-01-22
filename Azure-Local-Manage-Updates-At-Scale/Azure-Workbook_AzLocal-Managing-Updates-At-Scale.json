@@ -99,7 +99,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.1** | [View on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
+        "json": "## 🖥️ Azure Local - Managing Updates At Scale\r\n**Version: v0.4.2** | [View on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/tree/main/Azure-Local-Manage-Updates-At-Scale)\r\n\r\nFor issues or feedback, please [raise an issue on GitHub](https://github.com/NeilBird/PowerShell-Snippnets/issues)."
       },
       "name": "workbook-title-version"
     },
@@ -971,7 +971,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| extend versionParts = split(currentVersion, '.')\r\n| extend yymm = tostring(versionParts[1])\r\n| extend versionYear = toint(substring(yymm, 0, 2))\r\n| extend versionMonth = toint(substring(yymm, 2, 2))\r\n| extend versionDate = make_datetime(2000 + versionYear, versionMonth, 1)\r\n| extend cutoffDate = datetime_add('month', -6, startofmonth(now()))\r\n| extend isSupported = versionDate >= cutoffDate\r\n| where isSupported == true\r\n| summarize Supported = count()\r\n| extend Label = 'On Supported Version'",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| extend versionParts = split(currentVersion, '.')\r\n| extend yymm = tostring(versionParts[1])\r\n| extend versionYear = toint(substring(yymm, 0, 2))\r\n| extend versionMonth = toint(substring(yymm, 2, 2))\r\n| extend versionDate = make_datetime(2000 + versionYear, versionMonth, 1)\r\n| extend cutoffDate = datetime_add('month', -6, startofmonth(now()))\r\n| extend isSupported = versionDate >= cutoffDate\r\n| where isSupported == true\r\n| summarize Supported = count()\r\n| extend Label = 'Supported release'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -997,7 +997,7 @@
             },
             "customWidth": "16",
             "name": "tile-supported-version",
-            "title": "Supported",
+            "title": "Supported Release",
             "styleSettings": {
               "margin": "5px",
               "padding": "5px"
@@ -1007,7 +1007,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| extend versionParts = split(currentVersion, '.')\r\n| extend yymm = tostring(versionParts[1])\r\n| extend versionYear = toint(substring(yymm, 0, 2))\r\n| extend versionMonth = toint(substring(yymm, 2, 2))\r\n| extend versionDate = make_datetime(2000 + versionYear, versionMonth, 1)\r\n| extend cutoffDate = datetime_add('month', -6, startofmonth(now()))\r\n| extend isSupported = versionDate >= cutoffDate\r\n| where isSupported == false\r\n| summarize Unsupported = count()\r\n| extend Label = 'On Unsupported Version'",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend currentVersion = tostring(properties.currentVersion)\r\n| extend versionParts = split(currentVersion, '.')\r\n| extend yymm = tostring(versionParts[1])\r\n| extend versionYear = toint(substring(yymm, 0, 2))\r\n| extend versionMonth = toint(substring(yymm, 2, 2))\r\n| extend versionDate = make_datetime(2000 + versionYear, versionMonth, 1)\r\n| extend cutoffDate = datetime_add('month', -6, startofmonth(now()))\r\n| extend isSupported = versionDate >= cutoffDate\r\n| where isSupported == false\r\n| summarize Unsupported = count()\r\n| extend Label = 'Unsupported release'",
               "size": 4,
               "queryType": 1,
               "resourceType": "microsoft.resourcegraph/resources",
@@ -1033,7 +1033,7 @@
             },
             "customWidth": "16",
             "name": "tile-unsupported-version",
-            "title": "Unsupported",
+            "title": "Unsupported Release",
             "styleSettings": {
               "margin": "5px",
               "padding": "5px"
@@ -1148,6 +1148,34 @@
             }
           },
           {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "extensibilityresources\r\n| where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend solutionVersion = tostring(properties.currentVersion)\r\n| summarize Count = count() by solutionVersion\r\n| order by solutionVersion desc",
+              "size": 1,
+              "title": "Solution Version Distribution",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "barchart",
+              "chartSettings": {
+                "xAxis": "solutionVersion",
+                "yAxis": [
+                  "Count"
+                ],
+                "showLegend": true
+              }
+            },
+            "customWidth": "50",
+            "name": "chart-solution-version-distribution",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px"
+            }
+          },
+          {
             "type": 1,
             "content": {
               "json": "---\r\n#### 📋 Cluster Details"
@@ -1249,7 +1277,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n| extend status = iff(properties.status == \"ConnectedRecently\", \"Connected\", \"Disconnected\")\r\n| extend nodeCount = array_length(properties.reportedProperties.nodes)\r\n| extend totalCores = toint(properties.reportedProperties.nodes[0].coreCount) * nodeCount\r\n| extend totalMemoryGB = toint(properties.reportedProperties.nodes[0].memoryInGiB) * nodeCount\r\n| extend osVersion = tostring(properties.reportedProperties.nodes[0].osDisplayVersion)\r\n| extend hardwareClass = tostring(properties.reportedProperties.hardwareClass)\r\n| extend manufacturer = tostring(properties.reportedProperties.nodes[0].manufacturer)\r\n| extend model = tostring(properties.reportedProperties.nodes[0].model)\r\n| extend lastSync = todatetime(properties.lastSyncTimestamp)\r\n| extend registrationDate = todatetime(properties.registrationTimestamp)\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', id)\r\n| project ClusterName = name, clusterLink, resourceGroup, status, nodeCount, totalCores, totalMemoryGB, osVersion, hardwareClass, manufacturer, model, lastSync, registrationDate, location\r\n| order by status asc, ClusterName asc",
+              "query": "resources\r\n| where type == \"microsoft.azurestackhci/clusters\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| where '{ClusterTagName}' == '' or ('{ClusterTagValue}' != '' and tostring(tags['{ClusterTagName}']) =~ '{ClusterTagValue}')\r\n| extend clusterId = tolower(id)\r\n| join kind=leftouter (\r\n    extensibilityresources\r\n    | where type == \"microsoft.azurestackhci/clusters/updatesummaries\"\r\n    | extend clusterId = tolower(tostring(split(id, '/providers/Microsoft.AzureStackHCI/clusters/')[0]) + '/providers/microsoft.azurestackhci/clusters/' + tostring(split(id, '/clusters/')[1]))\r\n    | extend clusterId = tolower(substring(id, 0, indexof(id, '/providers/Microsoft.AzureStackHCI/updateSummaries')))\r\n    | extend solutionVersion = tostring(properties.currentVersion)\r\n    | project clusterId, solutionVersion\r\n) on clusterId\r\n| extend status = iff(properties.status == \"ConnectedRecently\", \"Connected\", \"Disconnected\")\r\n| extend nodeCount = array_length(properties.reportedProperties.nodes)\r\n| extend totalCores = toint(properties.reportedProperties.nodes[0].coreCount) * nodeCount\r\n| extend totalMemoryGB = toint(properties.reportedProperties.nodes[0].memoryInGiB) * nodeCount\r\n| extend osVersion = tostring(properties.reportedProperties.nodes[0].osDisplayVersion)\r\n| extend hardwareClass = tostring(properties.reportedProperties.hardwareClass)\r\n| extend manufacturer = tostring(properties.reportedProperties.nodes[0].manufacturer)\r\n| extend model = tostring(properties.reportedProperties.nodes[0].model)\r\n| extend lastSync = todatetime(properties.lastSyncTimestamp)\r\n| extend registrationDate = todatetime(properties.registrationTimestamp)\r\n| extend clusterLink = strcat('https://portal.azure.com/#@/resource', id)\r\n| project ClusterName = name, clusterLink, resourceGroup, status, solutionVersion, nodeCount, totalCores, totalMemoryGB, osVersion, hardwareClass, manufacturer, model, lastSync, registrationDate, location\r\n| order by status asc, ClusterName asc",
               "size": 0,
               "showAnalytics": true,
               "showRefreshButton": true,

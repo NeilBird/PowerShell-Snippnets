@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.4.1**
+**Version: v0.4.2**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -12,21 +12,25 @@ This workbook uses Azure Resource Graph queries to aggregate and display real-ti
 
 The workbook is organized into seven tabs:
 
-📊 Summary Dashboard | 📋 Update Readiness | 🔄 Update Progress | �️ Azure Local Machines | 🔗 ARB Status | 💻 Azure Local VMs | ☸️ AKS Arc Clusters
+📊 Summary Dashboard | 📋 Update Readiness | 🔄 Update Progress | 🖥️ Azure Local Machines | 🔗 ARB Status | 💻 Azure Local VMs | ☸️ AKS Arc Clusters
 
 ### 📊 Summary Dashboard
 A high-level overview of your entire Azure Local estate, including:
 - **Visual Summary Charts**: Pie charts showing cluster connectivity, health status, and Azure Resource Bridge (ARB) status
-- **Azure Local Totals and Connectivity**: Tile metrics for total clusters, connected/disconnected clusters, connection percentage, total nodes, and offline ARBs
+- **Azure Local Totals and Connectivity**: Tile metrics for total clusters, connected/disconnected clusters, connection percentage, total machines, and offline ARBs
 - **Health and Patching Status**: Healthy clusters, health warnings, failed prechecks, failed extensions, and health percentage
-- **Update Compliance**: Tiles showing clusters on supported version (6-month rolling window), unsupported version, updates available, updates in progress, and update failures. Version compliance is calculated based on the YYMM component of the cluster version (e.g., `xx.2512.x.x` = December 2025 release). Includes links to Lifecycle cadence and Latest releases documentation.
+- **Update Compliance**: 
+  - Tiles showing clusters on supported release (green), unsupported release (red), updates available, updates in progress, and update failures
+  - Version compliance calculated based on the YYMM component of the cluster version (e.g., `xx.2512.x.x` = December 2025 release) with 6-month rolling support window
+  - Links to Lifecycle cadence and Latest releases documentation
+  - Solution Version Distribution bar chart showing cluster counts by version
 - **Workload Summary**: Total Azure Local VMs and AKS Arc clusters
 - **Cluster Details Charts**: 
   - OS version distribution (e.g., 24H2, 23H2)
   - Hardware class distribution (Small, Medium, Large)
   - Billing model breakdown
   - Hardware vendor/model distribution
-- **All Clusters Table**: Comprehensive list with node count, total cores, total memory, OS version, hardware class, manufacturer, model, last sync, and registration date
+- **All Clusters Table**: Comprehensive list with solution version, node count, total cores, total memory, OS version, hardware class, manufacturer, model, last sync, and registration date
 - **Stale Clusters Warning**: Table showing clusters that haven't synced in 24+ hours with color-coded severity
 
 ![Summary Dashboard](images/summary-dashboard-screenshot.png)
@@ -47,7 +51,7 @@ Track the progress of ongoing updates across your clusters with detailed status 
 
 ![Update Progress](images/update-progress-screenshot.png)
 
-### �️ Azure Local Machines
+### 🖥️ Azure Local Machines
 Comprehensive view of physical server machines in Azure Local clusters:
 - **Last Refreshed timestamp** and documentation links
 - **Machine Overview**:
