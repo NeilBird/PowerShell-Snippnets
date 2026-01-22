@@ -1,6 +1,6 @@
 # Azure Local - Managing Updates At Scale Workbook
 
-**Version: v0.3.1**
+**Version: v0.3.2**
 
 An Azure Monitor Workbook for monitoring and managing Azure Local (formerly Azure Stack HCI) clusters at scale. This workbook provides comprehensive visibility into cluster health, update readiness, and workload status across your entire Azure Local fleet.
 
@@ -10,7 +10,11 @@ This workbook uses Azure Resource Graph queries to aggregate and display real-ti
 
 ## Features
 
-The workbook is organized into seven main tabs:
+The workbook is organized into seven tabs across two rows for better navigation:
+
+**Row 1**: 📊 Summary Dashboard | 📋 Update Readiness | 🔄 Update Progress | 🔗 ARB Status
+
+**Row 2**: 🖥️ Azure Local Nodes | 💻 Azure Local VMs | ☸️ AKS Arc Clusters
 
 ### 📊 Summary Dashboard
 A high-level overview of your entire Azure Local estate, including:
@@ -18,6 +22,13 @@ A high-level overview of your entire Azure Local estate, including:
 - **Azure Local Totals and Connectivity**: Tile metrics for total clusters, connected/disconnected clusters, connection percentage, total nodes, and offline ARBs
 - **Health and Patching Status**: Healthy clusters, health warnings, failed prechecks, failed extensions, and health percentage
 - **Workload Summary**: Total Azure Local VMs and AKS Arc clusters
+- **Cluster Details Charts**: 
+  - OS version distribution (e.g., 24H2, 23H2)
+  - Hardware class distribution (Small, Medium, Large)
+  - Billing model breakdown
+  - Hardware vendor/model distribution
+- **All Clusters Table**: Comprehensive list with node count, total cores, total memory, OS version, hardware class, manufacturer, model, last sync, and registration date
+- **Stale Clusters Warning**: Table showing clusters that haven't synced in 24+ hours with color-coded severity
 
 ![Summary Dashboard](images/summary-dashboard-screenshot.png)
 
@@ -36,7 +47,7 @@ Track the progress of ongoing updates across your clusters with detailed status 
 
 ![Update Progress](images/update-progress-screenshot.png)
 
-### 🔗 Azure Resource Bridges (ARB) Status
+### 🔗 ARB Status
 Monitor the status of Azure Resource Bridge appliances:
 - ARB status summary per Azure Local instance
 - Offline ARB appliances with associated cluster information
@@ -45,12 +56,26 @@ Monitor the status of Azure Resource Bridge appliances:
 
 ![Azure Resource Bridges Status](images/arb-offline-screenshot.png)
 
-### 🧩 Physical Node Extensions
-View and manage extensions installed on Azure Local physical nodes:
-- Filter by extension status (Succeeded, Failed, Creating, Updating, Deleting)
-- Filter by extension name
-- Summary table showing extension counts by status
-- Detailed list of all node extensions with status indicators
+### 🖥️ Azure Local Nodes
+Comprehensive view of physical server nodes in Azure Local clusters:
+- **Node Overview**:
+  - Connection status summary tiles (Total, Connected, Disconnected)
+  - Connection status pie chart
+  - Hardware vendor distribution pie chart
+  - Solution version distribution pie chart
+- **All Nodes Table** with details including:
+  - Node name and cluster association
+  - Connection status with icons
+  - vCPUs (logical core count) and memory (GB)
+  - Hardware vendor, model, and processor
+  - Solution version and IP address
+  - OS version and last status change
+- **Disconnected Nodes** warning table
+- **Node Extensions**:
+  - Filter by extension status (Succeeded, Failed, Creating, Updating, Deleting)
+  - Filter by extension name
+  - Extension status summary table and bar chart
+  - Failed extensions table with error details
 
 ![Physical Node Extensions](images/physical-nodes-extensions-screenshot.png)
 
@@ -60,17 +85,32 @@ Monitor virtual machines running on Azure Local clusters:
 - VM connection status distribution pie chart
 - OS distribution pie chart showing operating system breakdown
 - VMs by resource group distribution
-- Bar chart showing VM deployments over time with configurable time range (1-24 months)
-- Complete list of all VMs with details including OS version, agent version, and last status change
-- VMs grouped by hosting Azure Local cluster with counts
+- Bar chart showing VM deployments over time based on OS install date (configurable 1-24 months)
+- Complete list of all VMs with details including:
+  - OS SKU and version
+  - vCPUs and memory (GB)
+  - IP address
+  - Domain name
+  - Agent version
+  - OS install date and last status change
+- VMs grouped by hosting Azure Local cluster with hardware specs
 - VM distribution bar chart by cluster
 
 ### ☸️ AKS Arc Clusters
 Monitor AKS Arc clusters running on Azure Local:
-- Connectivity status summary and chart
-- Kubernetes version distribution
-- Provisioning state overview
-- Complete list of all AKS Arc clusters with details including node count, core count, and last connectivity time
+- Summary tiles showing total clusters, connected/offline, and provisioning state
+- Connectivity status distribution pie chart
+- Kubernetes version distribution pie chart
+- Provisioning state pie chart
+- Bar chart showing cluster deployments over time (configurable 3-24 months)
+- Complete list of all AKS Arc clusters with details including:
+  - Node count and total core count
+  - Kubernetes and agent versions
+  - Distribution type
+  - Last connectivity time
+  - Certificate expiration date
+  - Cluster creation date
+- Certificate expiration warning table showing clusters with certificates expiring within 30 days
 
 ![AKS Arc Clusters](images/aks-clusters-screenshot.png)
 
