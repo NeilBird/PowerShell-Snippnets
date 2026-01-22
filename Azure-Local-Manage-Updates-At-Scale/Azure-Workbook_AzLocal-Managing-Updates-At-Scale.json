@@ -2317,7 +2317,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where kind == \"HCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend status = tostring(properties.status)\r\n| extend osSku = tostring(properties.osSku)\r\n| extend osVersion = tostring(properties.osVersion)\r\n| extend agentVersion = tostring(properties.agentVersion)\r\n| extend vCPUs = toint(properties.detectedProperties.logicalCoreCount)\r\n| extend memoryGB = toint(properties.detectedProperties.totalPhysicalMemoryInGigabytes)\r\n| extend processor = tostring(properties.detectedProperties.processorNames)\r\n| extend ipAddress = tostring(properties.networkProfile.networkInterfaces[0].ipAddresses[0].address)\r\n| extend domainName = tostring(properties.domainName)\r\n| extend osInstallDate = todatetime(properties.osInstallDate)\r\n| extend lastStatusChange = todatetime(properties.lastStatusChange)\r\n| extend vmLink = strcat('https://portal.azure.com/#@/resource', id)\r\n| project VMName = name, vmLink, resourceGroup, status, osSku, osVersion, vCPUs, memoryGB, ipAddress, domainName, agentVersion, osInstallDate, lastStatusChange, location\r\n| order by status asc, VMName asc",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where kind == \"HCI\"\r\n| where '{ResourceGroupFilter}' == '' or resourceGroup matches regex strcat('(?i)', replace_string(replace_string('{ResourceGroupFilter}', '*', '.*'), '?', '.'))\r\n| extend status = tostring(properties.status)\r\n| extend osSku = tostring(properties.osSku)\r\n| extend osVersion = tostring(properties.osVersion)\r\n| extend agentVersion = tostring(properties.agentVersion)\r\n| extend vCPUs = toint(properties.detectedProperties.logicalCoreCount)\r\n| extend memoryGB = toint(properties.detectedProperties.totalPhysicalMemoryInGigabytes)\r\n| extend processor = tostring(properties.detectedProperties.processorNames)\r\n| extend ipAddress = tostring(properties.networkProfile.networkInterfaces[0].ipAddresses[0].address)\r\n| extend domainName = tostring(properties.domainName)\r\n| extend osInstallDate = todatetime(properties.osInstallDate)\r\n| extend lastStatusChange = todatetime(properties.lastStatusChange)\r\n| extend vmLink = strcat('https://portal.azure.com/#@/resource', id)\r\n| extend statusSort = case(status == 'Connected', 0, 1)\r\n| project VMName = name, vmLink, resourceGroup, status, osSku, osVersion, vCPUs, memoryGB, ipAddress, domainName, agentVersion, osInstallDate, lastStatusChange, location, statusSort\r\n| order by statusSort asc, VMName asc\r\n| project-away statusSort",
               "size": 0,
               "showAnalytics": true,
               "showRefreshButton": true,
@@ -3442,6 +3442,23 @@
               }
             },
             "name": "query - 3"
+          },
+          {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "nav",
+              "links": [
+                {
+                  "id": "troubleshooting-docs-link",
+                  "cellValue": "https://learn.microsoft.com/azure/azure-local/update/update-troubleshooting-23h2#using-powershell",
+                  "linkTarget": "Url",
+                  "linkLabel": "📚 Documentation: Troubleshooting Azure Local Updates",
+                  "style": "link"
+                }
+              ]
+            },
+            "name": "troubleshooting-link"
           },
           {
             "type": 3,
