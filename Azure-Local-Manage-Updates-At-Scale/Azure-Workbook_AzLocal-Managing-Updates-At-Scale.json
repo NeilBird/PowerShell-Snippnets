@@ -982,7 +982,21 @@
               "tileSettings": {
                 "titleContent": {
                   "columnMatch": "Label",
-                  "formatter": 1
+                  "formatter": 18,
+                  "formatOptions": {
+                    "thresholdsOptions": "colors",
+                    "thresholdsGrid": [
+                      {
+                        "operator": "Default",
+                        "thresholdValue": null,
+                        "representation": "green",
+                        "text": "{0}{1}"
+                      }
+                    ]
+                  },
+                  "tooltipFormat": {
+                    "tooltip": "Clusters running a release within the 6-month support window"
+                  }
                 },
                 "leftContent": {
                   "columnMatch": "Supported",
@@ -1018,7 +1032,21 @@
               "tileSettings": {
                 "titleContent": {
                   "columnMatch": "Label",
-                  "formatter": 1
+                  "formatter": 18,
+                  "formatOptions": {
+                    "thresholdsOptions": "colors",
+                    "thresholdsGrid": [
+                      {
+                        "operator": "Default",
+                        "thresholdValue": null,
+                        "representation": "redBright",
+                        "text": "{0}{1}"
+                      }
+                    ]
+                  },
+                  "tooltipFormat": {
+                    "tooltip": "Clusters running an unsupported release older than 6 months"
+                  }
                 },
                 "leftContent": {
                   "columnMatch": "Unsupported",
