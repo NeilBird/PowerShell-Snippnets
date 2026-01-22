@@ -1857,7 +1857,18 @@
               "tileSettings": {
                 "titleContent": {
                   "columnMatch": "Label",
-                  "formatter": 1
+                  "formatter": 18,
+                  "formatOptions": {
+                    "thresholdsOptions": "colors",
+                    "thresholdsGrid": [
+                      {
+                        "operator": "Default",
+                        "thresholdValue": null,
+                        "representation": "green",
+                        "text": "{0}{1}"
+                      }
+                    ]
+                  }
                 },
                 "leftContent": {
                   "columnMatch": "Connected",
@@ -1893,7 +1904,18 @@
               "tileSettings": {
                 "titleContent": {
                   "columnMatch": "Label",
-                  "formatter": 1
+                  "formatter": 18,
+                  "formatOptions": {
+                    "thresholdsOptions": "colors",
+                    "thresholdsGrid": [
+                      {
+                        "operator": "Default",
+                        "thresholdValue": null,
+                        "representation": "redBright",
+                        "text": "{0}{1}"
+                      }
+                    ]
+                  }
                 },
                 "leftContent": {
                   "columnMatch": "Disconnected",
