@@ -59,6 +59,8 @@ Monitor AKS Arc clusters running on Azure Local:
 - Provisioning state overview
 - Complete list of all AKS Arc clusters with details including node count, core count, and last connectivity time
 
+![AKS Arc Clusters](images/aks-clusters-screenshot.png)
+
 ## Quick Actions
 
 The workbook includes convenient links to:
