@@ -1429,13 +1429,6 @@
                   "name": "text - 2"
                 },
                 {
-                  "type": 1,
-                  "content": {
-                    "json": "⚠️ **Warning:** Azure resource bridge appliance can't be offline for more than 45 days because this inactivity can affect the validity of the security key used for authentication. [Learn more](https://learn.microsoft.com/azure/azure-arc/resource-bridge/troubleshoot-resource-bridge#arc-resource-bridge-is-offline)"
-                  },
-                  "name": "arb-offline-warning"
-                },
-                {
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
@@ -1522,6 +1515,13 @@
               "json": "## Offline Azure Resource Bridges (ARB) appliances"
             },
             "name": "text - 2 - Copy"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "⚠️ **Warning:** Azure resource bridge appliance can't be offline for more than 45 days because this inactivity can affect the validity of the security key used for authentication. [Learn more](https://learn.microsoft.com/azure/azure-arc/resource-bridge/troubleshoot-resource-bridge#arc-resource-bridge-is-offline)"
+            },
+            "name": "arb-offline-warning"
           },
           {
             "type": 3,
