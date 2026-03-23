@@ -55,7 +55,7 @@ Azure Stack Hub operators who cannot use the built-in Marketplace syndication (e
 | Requirement | Details |
 |---|---|
 | **OS** | Windows (scripts use PowerShell 5.1+) |
-| **Azure CLI** | Required for marketplace image discovery and disk operations. Install with `Install_AzCLI.ps1`. |
+| **Azure CLI** | Required for marketplace image discovery and disk operations. Install with `_Pre-req_Install_AzCLI.ps1`. |
 | **Azure subscription** | Needed temporarily to create a managed disk from the marketplace image. |
 | **Azure Stack Hub admin access** | Service Admin credentials and the Admin ARM endpoint. |
 | **Disk space** | ~30 GB for the full-disk VHD, ~10 GB for small-disk. |
@@ -63,16 +63,16 @@ Azure Stack Hub operators who cannot use the built-in Marketplace syndication (e
 
 ## Scripts
 
-### `Install_AzCLI.ps1`
+### `_Pre-req_Install_AzCLI.ps1`
 
 Installs Azure CLI on Windows and adds it to the system PATH. Run this first if Azure CLI is not already installed.
 
 ```powershell
 # Run as Administrator
-.\Install_AzCLI.ps1
+.\_Pre-req_Install_AzCLI.ps1
 ```
 
-### `Create_WS2025_Image_From_Azure.ps1`
+### `Hub_WS2025-create-image-from-Azure.ps1`
 
 Main script that performs the full end-to-end workflow. **Before running**, open the script and update the parameters in the `PARAMETERS` section at the top:
 
@@ -90,7 +90,7 @@ Main script that performs the full end-to-end workflow. **Before running**, open
 
 ```powershell
 # Run as Administrator
-.\Create_WS2025_Image_From_Azure.ps1
+.\Hub_WS2025-create-image-from-Azure.ps1
 ```
 
 The script will prompt for the service admin password interactively.
