@@ -95,9 +95,9 @@ Main script that performs the full end-to-end workflow. **Before running**, open
 
 The script will prompt for the service admin password interactively.
 
-## VM Licensing: Windows Server on Azure Stack Hub
+## VM Licensing & Billing (ARM `LicenseType`)
 
-The `LicenseType` ARM property is set **per-VM** at deployment time — it is **not** part of the platform image.
+This section covers **Axis 1 — billing**: how Microsoft meters and charges for the Windows Server VM. It is controlled by the `LicenseType` ARM property on the VM resource, set **per-VM** at deployment time (and changeable later with stop/deallocate + `Update-AzVM`). It is **not** part of the platform image.
 
 > **Note:** Azure Stack Hub is considered **on-premises hardware** for licensing purposes. Azure Hybrid Use Benefit (AHUB) is **not required** to use your own Windows Server licenses on Azure Stack Hub (see the [Azure Stack Hub Licensing Guide](https://go.microsoft.com/fwlink/?LinkId=2273601&clcid=0x409) FAQ).
 
@@ -151,7 +151,7 @@ $vm.LicenseType = "Windows_Server"
 Update-AzVM -ResourceGroupName "myRG" -VM $vm
 ```
 
-> **Important:** When bringing your own Windows Server licenses, you must have enough Windows Server core licenses (Datacenter recommended) to cover **all physical cores** in the Azure Stack Hub region, regardless of how many Windows Server VMs are actually deployed.
+> **Important:** When bringing your own Windows Server licenses, you must have enough Windows Server core licenses to cover **all physical cores** in the Azure Stack Hub region, regardless of how many Windows Server VMs are actually deployed. All cores must be covered with the **same edition** — all Datacenter **or** all Standard — because a VM can be scheduled on any node in the region (Datacenter is recommended for heavily virtualised workloads). Volume Licensing customers must also hold sufficient **Windows Server CALs** for the use case.
 
 ### Capacity billing model
 
@@ -159,13 +159,40 @@ In the capacity model, Windows Server guest licenses are **not included** in the
 
 For official information, refer to the [Azure Stack Hub Licensing, Packaging & Pricing Guide](https://go.microsoft.com/fwlink/?LinkId=2273601&clcid=0x409).
 
-## Windows Server 2025 Activation on Azure Stack Hub
+> [!IMPORTANT]
+> **`LicenseType` (billing) and KMS (activation) are two separate, independent concerns.**
+>
+> - `LicenseType` controls **billing** — which meter Azure Commerce uses for the VM.
+> - **KMS** controls **activation** — how the guest OS proves it is genuine.
+>
+> A VM can be PAYG-billed and KMS-activated, **or** BYOL-billed and KMS-activated. The activation method does not change the meter, and the meter does not change activation. They never need to "match".
 
-**KMS activation is required** for Windows Server 2025 guest VMs on Azure Stack Hub. Automatic Virtual Machine Activation (AVMA) is **not compatible** with Windows Server 2025 guests on Azure Stack Hub.
+## Guest OS Activation (KMS)
 
-Ensure your environment has access to a KMS host (e.g., an on-premises KMS server or the Azure Stack Hub infrastructure KMS endpoint) so that WS2025 VMs can activate after deployment.
+This section covers **Axis 2 — activation**: how the Windows Server 2025 guest OS proves it is genuine. Activation lives **inside the guest OS**, completely outside ARM. It has **no** effect on billing, does not talk to ARM, and does not read `LicenseType`.
+
+**KMS activation is required** for Windows Server 2025 guest VMs on Azure Stack Hub:
+
+- **AVMA** (Automatic Virtual Machine Activation) is **not supported** for Windows Server 2025 guests on Azure Stack Hub.
+- The **Azure-hosted KMS endpoints** used by public Azure marketplace images are not reachable/applicable on Hub.
+- **MAK** keys can be used but are typically reserved for one-off / disconnected scenarios.
+
+Ensure your environment has access to a reachable **KMS host** (e.g., an on-premises KMS server) so that WS2025 VMs can activate after deployment.
 
 > **Important — KMS is activation, not licensing:** Using KMS to activate Windows Server 2025 VMs does **not** remove or bypass the requirement to properly license Windows Server for the underlying physical CPU cores in the Azure Stack Hub scale unit. KMS is only an **activation mechanism** — it confirms the OS is genuine and enables full functionality, but it does not grant a license entitlement. You must still hold valid Windows Server licenses (e.g., Datacenter or Standard with Software Assurance) that cover every physical core in the scale unit, per your licensing agreement.
+
+### Common conflations between billing and activation
+
+These two axes are frequently mixed up. The table below maps the symptom to the actual cause and the (incorrect) conclusion that often follows:
+
+| Symptom | Real cause (axis) | Wrong conclusion |
+|---|---|---|
+| WS2025 VM won't activate after deploy | No KMS host reachable (Axis 2) | "BYOL is broken on Hub" |
+| Bill shows full Windows VM rate despite owning licences | Forgot `LicenseType=Windows_Server` (Axis 1) | "PAYG and BYOL can't mix" |
+| Marketplace image deployed on Hub doesn't auto-activate | Azure KMS endpoint not present on Hub (Axis 2) | "The PAYG image is incompatible with BYOL" |
+| `LicenseType` flipped but bill unchanged for a day | Usage meters batch / VM still running old state (Axis 1) | "Mixing modes confuses the meter" |
+
+None of these are "PAYG vs BYOL can't coexist" — they are either an **activation** problem (Axis 2) or a **`LicenseType` configuration** problem (Axis 1).
 
 ## Notes
 
