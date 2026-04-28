@@ -179,6 +179,22 @@ This section covers **guest OS activation**: how the Windows Server 2025 guest O
 
 Ensure your environment has access to a reachable **KMS host** (e.g., an on-premises KMS server) so that WS2025 VMs can activate after deployment.
 
+### Billing and activation are independent — supported combinations
+
+Any supported activation method works with **either** billing model. The activation host (KMS / MAK) does not query ARM and has no knowledge of `LicenseType`; the Azure Commerce meter has no knowledge of how the OS activated. Pick the billing model and activation method **independently**, based on what you have available:
+
+| `LicenseType` (billing) | Activation method | Supported on Hub? | Typical use |
+|---|---|---|---|
+| *unset* — **PAYG** (Windows Server VM meter) | **On-prem KMS** | ✅ Yes | **Most common** — Windows licence is in the meter; on-prem KMS handles the activation handshake. No region-wide licensing obligation. |
+| *unset* — **PAYG** | **MAK** | ✅ Yes | Works, but uses up a MAK activation count for no commercial benefit; rarely the right choice. |
+| *unset* — **PAYG** | **AVMA** | ❌ No | AVMA is not supported for WS2025 guests on Hub. |
+| *unset* — **PAYG** | **Azure-hosted KMS** | ❌ No | Public-Azure KMS endpoints are not reachable from Hub. |
+| `Windows_Server` — **BYOL** (Base VM meter) | **On-prem KMS** | ✅ Yes | Standard BYOL pattern; requires region-wide WS Datacenter/Standard licensing (all physical cores, same edition). |
+| `Windows_Server` — **BYOL** | **MAK** | ✅ Yes | Useful for disconnected or one-off scenarios. |
+| `Windows_Server` — **BYOL** | **AVMA** | ❌ No | AVMA is not supported for WS2025 guests on Hub. |
+
+> **Key point:** "PAYG with on-prem KMS" is a **fully supported, normal configuration** — and it is the right default for tenants who do not want to commit to BYOL's all-physical-cores licensing obligation. Activating via KMS does **not** make the VM "BYOL", and it does **not** mean you are double-paying. Under PAYG, the Windows Server licence entitlement is provided by the meter you are paying; KMS is only the technical handshake that confirms the OS is genuine.
+
 > **Important — KMS is activation, not licensing:** Using KMS to activate Windows Server 2025 VMs does **not** remove or bypass any licensing obligation you have for Windows Server. KMS is only an **activation mechanism** — it confirms the OS is genuine and enables full functionality, but it does not grant a licence entitlement. The licensing obligation depends on your billing model:
 >
 > - **PAYG** (`LicenseType` unset, Windows Server VM meter) — the Windows Server licence is included in the per-vCPU meter; no separate Windows Server licences are required.
