@@ -179,7 +179,13 @@ This section covers **Axis 2 — activation**: how the Windows Server 2025 guest
 
 Ensure your environment has access to a reachable **KMS host** (e.g., an on-premises KMS server) so that WS2025 VMs can activate after deployment.
 
-> **Important — KMS is activation, not licensing:** Using KMS to activate Windows Server 2025 VMs does **not** remove or bypass the requirement to properly license Windows Server for the underlying physical CPU cores in the Azure Stack Hub scale unit. KMS is only an **activation mechanism** — it confirms the OS is genuine and enables full functionality, but it does not grant a license entitlement. You must still hold valid Windows Server licenses (e.g., Datacenter or Standard with Software Assurance) that cover every physical core in the scale unit, per your licensing agreement.
+> **Important — KMS is activation, not licensing:** Using KMS to activate Windows Server 2025 VMs does **not** remove or bypass any licensing obligation you have for Windows Server. KMS is only an **activation mechanism** — it confirms the OS is genuine and enables full functionality, but it does not grant a licence entitlement. The licensing obligation depends on your billing model:
+>
+> - **PAYG** (`LicenseType` unset, Windows Server VM meter) — the Windows Server licence is included in the per-vCPU meter; no separate Windows Server licences are required.
+> - **BYOL** (`LicenseType="Windows_Server"`, Base VM meter) — you must hold valid Windows Server licences (e.g., Datacenter or Standard) covering **every physical core** in the Azure Stack Hub region, per the [Hub Licensing Guide](https://go.microsoft.com/fwlink/?LinkId=2273601&clcid=0x409).
+> - **Capacity model** — Windows Server guest licences are **not** included in the capacity fee; separate Volume Licensing covering every physical core is required.
+>
+> KMS activation succeeding does not, on its own, prove you are correctly licensed under any of these models.
 
 ### Common conflations between billing and activation
 
