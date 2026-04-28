@@ -97,7 +97,7 @@ The script will prompt for the service admin password interactively.
 
 ## VM Licensing & Billing (ARM `LicenseType`)
 
-This section covers **Axis 1 — billing**: how Microsoft meters and charges for the Windows Server VM. It is controlled by the `LicenseType` ARM property on the VM resource, set **per-VM** at deployment time (and changeable later with stop/deallocate + `Update-AzVM`). It is **not** part of the platform image.
+This section covers **billing**: how Microsoft meters and charges for the Windows Server VM. It is controlled by the `LicenseType` ARM property on the VM resource, set **per-VM** at deployment time (and changeable later with stop/deallocate + `Update-AzVM`). It is **not** part of the platform image.
 
 > **Note:** Azure Stack Hub is considered **on-premises hardware** for licensing purposes. Azure Hybrid Use Benefit (AHUB) is **not required** to use your own Windows Server licenses on Azure Stack Hub (see the [Azure Stack Hub Licensing Guide](https://go.microsoft.com/fwlink/?LinkId=2273601&clcid=0x409) FAQ).
 
@@ -169,7 +169,7 @@ For official information, refer to the [Azure Stack Hub Licensing, Packaging & P
 
 ## Guest OS Activation (KMS)
 
-This section covers **Axis 2 — activation**: how the Windows Server 2025 guest OS proves it is genuine. Activation lives **inside the guest OS**, completely outside ARM. It has **no** effect on billing, does not talk to ARM, and does not read `LicenseType`.
+This section covers **guest OS activation**: how the Windows Server 2025 guest OS proves it is genuine. Activation lives **inside the guest OS**, completely outside ARM. It has **no** effect on billing, does not talk to ARM, and does not read `LicenseType`.
 
 **KMS activation is required** for Windows Server 2025 guest VMs on Azure Stack Hub:
 
@@ -191,14 +191,14 @@ Ensure your environment has access to a reachable **KMS host** (e.g., an on-prem
 
 These two axes are frequently mixed up. The table below maps the symptom to the actual cause and the (incorrect) conclusion that often follows:
 
-| Symptom | Real cause (axis) | Wrong conclusion |
-|---|---|---|
-| WS2025 VM won't activate after deploy | No KMS host reachable (Axis 2) | "BYOL is broken on Hub" |
-| Bill shows full Windows VM rate despite owning licences | Forgot `LicenseType=Windows_Server` (Axis 1) | "PAYG and BYOL can't mix" |
-| Marketplace image deployed on Hub doesn't auto-activate | Azure KMS endpoint not present on Hub (Axis 2) | "The PAYG image is incompatible with BYOL" |
-| `LicenseType` flipped but bill unchanged for a day | Usage meters batch / VM still running old state (Axis 1) | "Mixing modes confuses the meter" |
+| Symptom | Real cause | Category | Wrong conclusion |
+|---|---|---|---|
+| WS2025 VM won't activate after deploy | No KMS host reachable | Activation | "BYOL is broken on Hub" |
+| Bill shows full Windows VM rate despite owning licences | Forgot `LicenseType=Windows_Server` | Billing | "PAYG and BYOL can't mix" |
+| Marketplace image deployed on Hub doesn't auto-activate | Azure KMS endpoint not present on Hub | Activation | "The PAYG image is incompatible with BYOL" |
+| `LicenseType` flipped but bill unchanged for a day | Usage meters batch / VM still running old state | Billing | "Mixing modes confuses the meter" |
 
-None of these are "PAYG vs BYOL can't coexist" — they are either an **activation** problem (Axis 2) or a **`LicenseType` configuration** problem (Axis 1).
+None of these are "PAYG vs BYOL can't coexist" — they are either an **activation** problem or a **`LicenseType` configuration** problem.
 
 ## Notes
 
