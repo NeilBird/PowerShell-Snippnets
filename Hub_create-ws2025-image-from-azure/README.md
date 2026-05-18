@@ -61,6 +61,14 @@ Azure Stack Hub operators who cannot use the built-in Marketplace syndication (e
 | **Disk space** | ~30 GB for the full-disk VHD, ~10 GB for small-disk. |
 | **PowerShell modules** | Installed automatically by the script: `Az` (2020-09-01-hybrid profile), `AzureStack 2.4.0`. |
 
+> [!IMPORTANT]
+> **Service Admin authentication (no MFA).**
+> The script uses `Connect-AzAccount -Credential`, which **does not support MFA or Conditional Access**. Use a Service Admin account that is exempt from MFA, or modify Step 4 to use interactive `Connect-AzAccount -Environment $EnvironmentName -Tenant $TenantID` (drop `-Credential`).
+
+> [!IMPORTANT]
+> **Hub admin endpoint certificate must be trusted.**
+> Step 4 calls `Invoke-RestMethod` against the Hub admin ARM endpoint. If that endpoint uses an internal CA / self-signed certificate that is not trusted on the workstation, the call will fail. Import the Hub's CA certificate into the workstation's Trusted Root store before running the script.
+
 ## Scripts
 
 ### `_Pre-req_Install_AzCLI.ps1`
@@ -72,7 +80,7 @@ Installs Azure CLI on Windows and adds it to the system PATH. Run this first if 
 .\_Pre-req_Install_AzCLI.ps1
 ```
 
-### `Hub_WS2025-create-image-from-Azure.ps1`
+### `Example_WS2025-create-image-from-Azure.ps1`
 
 Main script that performs the full end-to-end workflow. **Before running**, open the script and update the parameters in the `PARAMETERS` section at the top:
 
@@ -90,10 +98,18 @@ Main script that performs the full end-to-end workflow. **Before running**, open
 
 ```powershell
 # Run as Administrator
-.\Hub_WS2025-create-image-from-Azure.ps1
+.\Example_WS2025-create-image-from-Azure.ps1
 ```
 
 The script will prompt for the service admin password interactively.
+
+**Optional switches:**
+
+| Switch | Effect |
+|---|---|
+| `-CleanAzModules` | Uninstalls every existing `Az.*` / `Azs.*` / `Azure*` PowerShell module before installing the hybrid profile. **Off by default** because this affects every PowerShell session on the workstation, not just this script. Use only when you need a clean reinstall. |
+| `-ClearAzCliAccount` | Runs `az account clear` before login, removing all cached Azure CLI sessions on the machine. **Off by default.** |
+| `-AzureLocation <region>` | Public-Azure region used to create the temporary managed disk. Defaults to `eastus`. |
 
 ## VM Licensing & Billing (ARM `LicenseType`)
 
@@ -227,7 +243,7 @@ None of these are "PAYG vs BYOL can't coexist" — they are either an **activati
 
 MIT License
 
-Copyright (c) 2025
+Copyright (c) 2025-2026
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

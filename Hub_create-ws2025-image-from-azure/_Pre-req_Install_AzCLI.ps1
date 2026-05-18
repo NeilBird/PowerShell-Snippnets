@@ -1,3 +1,4 @@
+#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Installs Azure CLI on Windows and adds it to the system PATH.
@@ -13,6 +14,9 @@
 .NOTES
     Must be run as Administrator (for MSI install and system PATH modification).
 #>
+
+# Ensure TLS 1.2 for downloads from aka.ms / Microsoft endpoints
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 # Set variables
 $downloadUrl = "https://aka.ms/installazurecliwindowsx64"

@@ -18,13 +18,31 @@
 
 .NOTES
     Prerequisites:
-      - Azure CLI installed (see Install_AzCLI.ps1)
+      - Azure CLI installed (see _Pre-req_Install_AzCLI.ps1)
       - Run as Administrator
       - Azure Stack Hub admin access
       - Sufficient disk space for the VHD download (~30 GB for full disk, ~10 GB for small disk)
 
     Adjust the parameters below to match your environment before running.
+
+.PARAMETER CleanAzModules
+    If specified, uninstalls every existing Az.*, Azs.* and Azure* PowerShell module on the
+    machine before installing the 2020-09-01-hybrid profile. WARNING: this affects every
+    PowerShell session on this workstation, not just this script. Off by default.
+
+.PARAMETER ClearAzCliAccount
+    If specified, runs 'az account clear' which removes ALL cached Azure CLI sessions on
+    this machine before logging in. Off by default.
+
+.PARAMETER AzureLocation
+    Azure (public cloud) region used to create the temporary managed disk. Default: eastus.
 #>
+[CmdletBinding()]
+param(
+    [switch]$CleanAzModules,
+    [switch]$ClearAzCliAccount,
+    [string]$AzureLocation = 'eastus'
+)
 
 #region ========================== PARAMETERS - EDIT THESE ==========================
 
@@ -63,9 +81,14 @@ Write-Host "`n[Step 1] Installing required PowerShell modules..." -ForegroundCol
 
 Install-Module PowershellGet -MinimumVersion 2.2.3 -Repository PSGallery -Force -ErrorAction SilentlyContinue
 
-Get-Module -Name Azure* -ListAvailable | Uninstall-Module -Force -Verbose -ErrorAction Continue
-Get-Module -Name Azs.* -ListAvailable | Uninstall-Module -Force -Verbose -ErrorAction Continue
-Get-Module -Name Az.* -ListAvailable | Uninstall-Module -Force -Verbose -ErrorAction Continue
+if ($CleanAzModules) {
+    Write-Host "  -CleanAzModules specified: uninstalling existing Az / Azs / Azure modules (this affects ALL PowerShell sessions on this machine)..." -ForegroundColor Yellow
+    Get-Module -Name Azure* -ListAvailable | Uninstall-Module -Force -Verbose -ErrorAction Continue
+    Get-Module -Name Azs.* -ListAvailable | Uninstall-Module -Force -Verbose -ErrorAction Continue
+    Get-Module -Name Az.* -ListAvailable | Uninstall-Module -Force -Verbose -ErrorAction Continue
+} else {
+    Write-Host "  Skipping module cleanup (re-run with -CleanAzModules if you need a clean reinstall)." -ForegroundColor DarkGray
+}
 
 Install-Module -Name Az.BootStrapper -Repository PSGallery -Force
 Install-AzProfile -Profile 2020-09-01-hybrid -Force
@@ -81,7 +104,10 @@ Import-Module -Name Az -Force -DisableNameChecking | Out-Null
 # ==================================================================================
 Write-Host "`n[Step 2] Logging into public Azure and finding WS2025 image..." -ForegroundColor Cyan
 
-az account clear
+if ($ClearAzCliAccount) {
+    Write-Host "  -ClearAzCliAccount specified: clearing all cached Azure CLI sessions on this machine..." -ForegroundColor Yellow
+    az account clear
+}
 az login --use-device-code
 az account show
 
@@ -133,14 +159,12 @@ Write-Host "`nSelected image: $($selectedImage.urn)" -ForegroundColor Green
 # ==================================================================================
 Write-Host "`n[Step 3] Creating managed disk and exporting VHD..." -ForegroundColor Cyan
 
-az group create -n $AzureResourceGroup -l eastus --output none 2>$null
+az group create -n $AzureResourceGroup -l $AzureLocation --output none 2>$null
 
 az disk create `
   -g $AzureResourceGroup `
   -n $AzureDiskName `
   --image-reference $selectedImage.urn
-
-$disk = az disk show -g $AzureResourceGroup -n $AzureDiskName -o json | ConvertFrom-Json
 
 $diskAccess = az disk grant-access `
   --duration-in-seconds 3600 `
